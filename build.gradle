@@ -1,0 +1,20 @@
+/*
+ * Copyright 2015 Palantir Technologies, Inc. All rights reserved.
+ */
+
+plugins {
+  id 'com.palantir.git-version' version '0.2.0'
+}
+
+repositories {
+  mavenCentral()
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
+dependencies {
+}
