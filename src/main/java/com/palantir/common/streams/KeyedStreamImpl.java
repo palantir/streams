@@ -1,0 +1,73 @@
+package com.palantir.common.streams;
+
+import static com.google.common.base.Preconditions.checkState;
+
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import com.google.common.collect.Multimap;
+
+class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
+
+    private final Stream<Entry<K, V>> entries;
+
+    public KeyedStreamImpl(Stream<Entry<K, V>> entries) {
+        this.entries = entries;
+    }
+
+    @Override
+    public KeyedStream<K, V> filterEntries(BiPredicate<? super K, ? super V> predicate) {
+        return new KeyedStreamImpl<>(entries.filter(entry -> predicate.test(entry.getKey(), entry.getValue())));
+    }
+
+    @Override
+    public <T extends Map<K, V>> T collectTo(Supplier<T> supplier) {
+        return entries.collect(supplier, KeyedStreamImpl::accumulate, KeyedStreamImpl::combine);
+    }
+
+    @Override
+    public <M extends Multimap<K, V>> M collectToMultimap(Supplier<M> supplier) {
+        return entries.collect(supplier::get, KeyedStreamImpl::accumulate, KeyedStreamImpl::combine);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked") // Entries are internal to KeyedStream and never mutated so cast is safe
+    public <K2, V2> KeyedStream<K2, V2> mapEntries(
+            BiFunction<? super K, ? super V, ? extends Entry<? extends K2, ? extends V2>> entryMapper) {
+        return new KeyedStreamImpl<K2, V2>(entries.<Map.Entry<K2, V2>>map(entry ->
+                (Map.Entry<K2, V2>) entryMapper.apply(entry.getKey(), entry.getValue())));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked") // Entries are internal to KeyedStream and never mutated so cast is safe
+    public <K2, V2> KeyedStream<K2, V2> flatMapEntries(
+            BiFunction<? super K, ? super V, ? extends Stream<? extends Entry<? extends K2, ? extends V2>>> entryMapper) {
+        return new KeyedStreamImpl<K2, V2>(entries.flatMap(entry ->
+                (Stream<Map.Entry<K2, V2>>) entryMapper.apply(entry.getKey(), entry.getValue())));
+    }
+
+    private static <K, V> void accumulate(Map<K, V> map, Map.Entry<K, V> entry) {
+        checkState(!map.containsKey(entry.getKey()), "Duplicate key %s", entry.getKey());
+        map.put(entry.getKey(), entry.getValue());
+    }
+
+    private static <K, V> void combine(Map<K, V> map, Map<K, V> entries) {
+        map.keySet().stream().filter(entries::containsKey).findAny().map(duplicate -> {
+            throw new IllegalStateException("Duplicate key " + duplicate);
+        });
+        map.putAll(entries);
+    }
+
+    private static <K, V> void accumulate(Multimap<K, V> multimap, Map.Entry<K, V> entry) {
+        multimap.put(entry.getKey(), entry.getValue());
+    }
+
+    private static <K, V> void combine(Multimap<K, V> multimap, Multimap<K, V> entries) {
+        multimap.putAll(entries);
+    }
+
+}
