@@ -6,23 +6,27 @@ working with streams of Map entries readable.
 
 ## KeyedStream
 
+    import com.palantir.common.streams.KeyedStream;
+
 A `KeyedStream<K, V>` is syntactic sugar around a `Stream<Map.Entry<K, V>>`, with methods for filtering/updating keys,
-values and whole entries. You can create a KeyedStream from a [Map], or from a [Stream]/[Iterable]/array, giving initially
+values and whole entries. You can create a KeyedStream from a [Map], or from a [Stream] or [Iterable], giving initially
 identical keys and values.
 
-    KeyedStream.of(1, 2, 3)          // keys and values are initially identical
-        .map(v -> v * 2)             // keys remain unchanged, values are doubled
-        .mapKeys(Integer::toString)  // values remain unchanged
-        .collectToMap();             // returns a Map<String, Integer>
+    KeyedStream.of(Stream.of(1, 2, 3))  // keys and values are initially identical
+        .map(v -> v * 2)                // keys remain unchanged, values are doubled
+        .mapKeys(Integer::toString)     // values remain unchanged
+        .collectToMap();                // returns a Map<String, Integer>
 
 Each map function also accepts a [BiFunction], making it easy to modify keys based on values, and vice versa:
 
-    KeyedStream.of(map)
+    KeyedStream.stream(map)
         .mapValues((k, v) -> new FooType(k, v))  // keys remain unchanged
         .collectToMap();
 
 
 ## MoreStreams
+
+    import static com.palantir.common.streams.MoreStreams.*;
 
 `MoreStreams::stream` creates streams from:
 
