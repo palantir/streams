@@ -2,6 +2,10 @@
 Utilities for working with [Java 8 streams][Stream]. [MoreStreams](#morestreams) provides a few convenient static methods; [KeyedStream](#keyedstream) makes
 working with streams of Map entries readable.
 
+CircleCI: ![Build status]
+
+[Build status]: https://circleci.com/gh/palantir/streams/tree/master.png "Build status"
+
 ## KeyedStream
 
 A `KeyedStream<K, V>` is syntactic sugar around a `Stream<Map.Entry<K, V>>`, with methods for filtering/updating keys,
