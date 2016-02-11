@@ -204,7 +204,7 @@ public interface KeyedStream<K, V> {
     /**
      * Collects a stream and restreams it as a keyed stream, where key and value are the same.
      *
-     * <p>Consider the (less fluent) {@link #keyedStream(stream)} if the stream is likely to be
+     * <p>Consider the (less fluent) {@link #of(Stream)} if the stream is likely to be
      * large and/or concurrent, as it avoids serializing into a temporary collection.
      */
     static <V> Collector<V, List<V>, KeyedStream<V, V>> toKeyedStream() {
