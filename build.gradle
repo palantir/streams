@@ -29,6 +29,8 @@ targetCompatibility = "1.8"
 
 apply from: "${rootDir}/gradle/publish.gradle"
 
+version gitVersion()
+
 dependencies {
   compile 'com.google.guava:guava:18.0'
   testCompile 'junit:junit:4.12'
