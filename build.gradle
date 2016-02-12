@@ -29,6 +29,7 @@ targetCompatibility = "1.8"
 
 apply from: "${rootDir}/gradle/publish.gradle"
 
+group 'com.palantir.common'
 version gitVersion()
 
 dependencies {
