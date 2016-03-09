@@ -20,9 +20,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.palantir.common.streams.KeyedStream.toKeyedStream;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.common.collect.ImmutableSet;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -74,6 +77,24 @@ public class KeyedStreamTests {
         assertThat(map.entrySet())
                 .containsExactly(immutableEntry("xxx", 3), immutableEntry("xxxx", 4), immutableEntry("xxxxx", 5))
                 .inOrder();
+    }
+
+    @Test
+    public void test_can_collect_keys() {
+        Set<String> keys = ImmutableSet.of("first", "second");
+
+        Map<String, Integer> map = KeyedStream.of(keys).map(String::length).collectToMap();
+
+        assertThat(KeyedStream.stream(map).keys().collect(Collectors.toSet())).isEqualTo(keys);
+    }
+
+    @Test
+    public void test_can_collect_values() {
+        Set<String> values = ImmutableSet.of("first", "second");
+
+        Map<Integer, String> map = KeyedStream.of(values).mapKeys(String::length).collectToMap();
+
+        assertThat(KeyedStream.stream(map).values().collect(Collectors.toSet())).isEqualTo(values);
     }
 
     @Test

@@ -181,6 +181,16 @@ public interface KeyedStream<K, V> {
     <M extends Multimap<K, V>> M collectToMultimap(Supplier<M> multimapFactory);
 
     /**
+     * Returns a stream consisting of the result of taking only the keys of each entry of this stream.
+     */
+    Stream<K> keys();
+
+    /**
+     * Returns a stream consisting of the result of taking only the values of each entry of this stream.
+     */
+    Stream<V> values();
+
+    /**
      * Returns a keyed stream with matching keys and values taken from {@code stream}.
      */
     static <V> KeyedStream<V, V> of(Stream<V> stream) {
