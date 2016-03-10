@@ -65,6 +65,16 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
                 (Stream<Map.Entry<K2, V2>>) entryMapper.apply(entry.getKey(), entry.getValue())));
     }
 
+    @Override
+    public Stream<K> keys() {
+        return entries.map(Entry::getKey);
+    }
+
+    @Override
+    public Stream<V> values() {
+        return entries.map(Entry::getValue);
+    }
+
     private static <K, V> void accumulate(Map<K, V> map, Map.Entry<K, V> entry) {
         checkState(!map.containsKey(entry.getKey()), "Duplicate key %s", entry.getKey());
         map.put(entry.getKey(), entry.getValue());
@@ -84,5 +94,4 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
     private static <K, V> void combine(Multimap<K, V> multimap, Multimap<K, V> entries) {
         multimap.putAll(entries);
     }
-
 }
