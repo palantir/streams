@@ -21,7 +21,7 @@ identical keys and values.
 Each map function also accepts a [BiFunction], making it easy to modify keys based on values, and vice versa:
 
     KeyedStream.stream(map)
-        .mapValues((k, v) -> new FooType(k, v))  // keys remain unchanged
+        .map((k, v) -> new FooType(k, v))  // keys remain unchanged
         .collectToMap();
 
 
