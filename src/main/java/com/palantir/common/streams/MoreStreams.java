@@ -15,7 +15,10 @@
  */
 package com.palantir.common.streams;
 
+import java.util.Iterator;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -41,6 +44,18 @@ public class MoreStreams {
      */
     public static <T> Stream<T> stream(Optional<T> optionalValue) {
         return optionalValue.map(Stream::of).orElse(Stream.of());
+    }
+
+    /**
+     * Returns a stream from the provided iterator, preserving the iteration order.
+     *
+     * @param iterator Iterator for which a stream needs to be created
+     * @param <T> Type parameter for the iterator
+     * @return A stream for the iterator
+     */
+    public static <T> Stream<T> stream(Iterator<T> iterator) {
+        Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
+        return StreamSupport.stream(spliterator, NOT_PARALLEL);
     }
 
     private MoreStreams() {}
