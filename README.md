@@ -7,6 +7,10 @@ working with streams of Map entries readable.
 
 ## KeyedStream
 
+*Consider using [streamex's EntryStream] instead of this class.*
+
+[streamex's EntryStream]: http://amaembo.github.io/streamex/javadoc/one/util/streamex/EntryStream.html
+
     import com.palantir.common.streams.KeyedStream;
 
 A `KeyedStream<K, V>` is syntactic sugar around a `Stream<Map.Entry<K, V>>`, with methods for filtering/updating keys,
