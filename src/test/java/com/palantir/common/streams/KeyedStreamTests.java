@@ -31,8 +31,9 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
-import com.palantir.common.streams.KeyedStream;
+import com.google.common.collect.SetMultimap;
 
 public class KeyedStreamTests {
 
@@ -67,6 +68,12 @@ public class KeyedStreamTests {
     public void test_stream_multiple_values_as_map() {
         Map<Integer, Integer> map = KeyedStream.stream(ImmutableMap.of(4, 8, 3, 6, 6, 12)).collectToMap();
         assertThat(map).isEqualTo(ImmutableMap.of(3, 6, 4, 8, 6, 12));
+    }
+
+    @Test
+    public void test_stream_multiple_values_as_multimap() {
+        SetMultimap<Integer, Integer> map = KeyedStream.stream(ImmutableSetMultimap.of(1, 2, 3, 4)).collectToSetMultimap();
+        assertThat(map).isEqualTo(ImmutableSetMultimap.of(3, 4, 1, 2));
     }
 
     @Test
