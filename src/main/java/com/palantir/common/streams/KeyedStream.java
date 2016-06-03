@@ -212,6 +212,13 @@ public interface KeyedStream<K, V> {
     }
 
     /**
+     * Returns a keyed stream of {@code multimap}'s entries.
+     */
+    static <K, V> KeyedStream<K, V> stream(Multimap<K, V> multimap) {
+        return new KeyedStreamImpl<>(multimap.entries().stream());
+    }
+
+    /**
      * Collects a stream and restreams it as a keyed stream, where key and value are the same.
      *
      * <p>Consider the (less fluent) {@link #of(Stream)} if the stream is likely to be
