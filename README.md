@@ -1,9 +1,25 @@
 # streams
 Utilities for working with [Java 8 streams][Stream]. [MoreStreams](#morestreams) provides a few convenient static methods; [KeyedStream](#keyedstream) makes
-working with streams of Map entries readable.
+working with streams of Map entries readable. [MoreCollectors](#morecollectors) provides collectors for immutable collections.
 
 [![CircleCI Build Status](https://circleci.com/gh/palantir/streams/tree/master.svg)](https://circleci.com/gh/palantir/streams)
 [![Download](https://api.bintray.com/packages/palantir/releases/streams/images/download.svg) ](https://bintray.com/palantir/releases/streams/_latestVersion)
+
+## MoreCollectors
+
+    import com.palantir.common.streams.MoreCollectors;
+
+MoreCollectors allows one to convert their stream directly into a collection that is immutable, the underlying collection type is not guaranteed.
+
+    Stream.of(1, 2, 3)
+        .map(v -> v * 2)
+        .collect(MoreCollectors.toImmutableList());
+
+The collectors currently provided:
+* toImmutableList()
+* toImmutableSet()
+* toImmutableMap()
+
 
 ## KeyedStream
 
