@@ -19,6 +19,7 @@ import static com.google.common.collect.Maps.immutableEntry;
 import static com.google.common.truth.Truth.assertThat;
 import static com.palantir.common.streams.KeyedStream.toKeyedStream;
 
+import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -122,4 +123,11 @@ public class KeyedStreamTests {
         assertThat(map).isEqualTo(ImmutableMap.of(8, 6, 10, 8, 14, 12));
     }
 
+    @Test
+    public void test_stream_entries() {
+        Stream<Map.Entry<Integer, Integer>> entryStream = ImmutableSet.of(1, 2, 3).stream()
+                .map(i -> new AbstractMap.SimpleEntry<>(i, i * i));
+        Map<Integer, Integer> map = KeyedStream.ofEntries(entryStream).collectToMap();
+        assertThat(map).isEqualTo(ImmutableMap.of(1,1, 2,4, 3,9));
+    }
 }

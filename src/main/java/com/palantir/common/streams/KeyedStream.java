@@ -208,7 +208,14 @@ public interface KeyedStream<K, V> {
      * Returns a keyed stream of {@code map}'s entries.
      */
     static <K, V> KeyedStream<K, V> stream(Map<K, V> map) {
-        return new KeyedStreamImpl<>(map.entrySet().stream());
+        return ofEntries(map.entrySet().stream());
+    }
+
+    /**
+     * Returns a keyed stream of Entries.
+     */
+    static <K, V> KeyedStream<K, V> ofEntries(Stream<Map.Entry<K, V>> entries) {
+        return new KeyedStreamImpl<>(entries);
     }
 
     /**
