@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
@@ -209,6 +210,31 @@ public interface KeyedStream<K, V> {
      */
     static <K, V> KeyedStream<K, V> stream(Map<K, V> map) {
         return ofEntries(map.entrySet().stream());
+    }
+
+    /**
+     * Returns a keyed stream of every entry in all {@code maps}.
+     */
+    static <K, V> KeyedStream<K, V> streamAll(Iterable<? extends Map<? extends K, ? extends V>> maps) {
+        @SuppressWarnings("unchecked")  // Safe to discard the wildcards
+        KeyedStream<K, V> result = ofEntries(MoreStreams.stream(maps)
+                .flatMap(map -> ((Map<K, V>)(Map<?, ?>) map).entrySet().stream()));
+        return result;
+    }
+
+    /**
+     * Returns a keyed stream of every entry in all maps passed in.
+     */
+    @SafeVarargs
+    static <K, V> KeyedStream<K, V> streamAll(
+            Map<? extends K, ? extends V> map1,
+            Map<? extends K, ? extends V> map2,
+            Map<? extends K, ? extends V>... otherMaps) {
+        return streamAll(ImmutableList.<Map<? extends K, ? extends V>>builder()
+                .add(map1)
+                .add(map2)
+                .add(otherMaps)
+                .build());
     }
 
     /**
