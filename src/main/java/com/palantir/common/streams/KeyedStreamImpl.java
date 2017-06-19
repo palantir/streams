@@ -64,13 +64,8 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
     }
 
     @Override
-    public Stream<K> keys() {
-        return entries.map(Entry::getKey);
-    }
-
-    @Override
-    public Stream<V> values() {
-        return entries.map(Entry::getValue);
+    public Stream<Entry<? extends K, ? extends V>> entries() {
+        return entries;
     }
 
     private static <K, V> void accumulate(Map<K, V> map, Map.Entry<? extends K, ? extends V> entry) {
