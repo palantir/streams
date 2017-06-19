@@ -28,9 +28,9 @@ import com.google.common.collect.Multimap;
 
 class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
 
-    private final Stream<Entry<K, V>> entries;
+    private final Stream<Entry<? extends K, ? extends V>> entries;
 
-    public KeyedStreamImpl(Stream<Entry<K, V>> entries) {
+    public KeyedStreamImpl(Stream<Entry<? extends K, ? extends V>> entries) {
         this.entries = entries;
     }
 
@@ -50,19 +50,17 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
     }
 
     @Override
-    @SuppressWarnings("unchecked") // Entries are internal to KeyedStream and never mutated so cast is safe
     public <K2, V2> KeyedStream<K2, V2> mapEntries(
             BiFunction<? super K, ? super V, ? extends Entry<? extends K2, ? extends V2>> entryMapper) {
-        return new KeyedStreamImpl<K2, V2>(entries.<Map.Entry<K2, V2>>map(entry ->
-                (Map.Entry<K2, V2>) entryMapper.apply(entry.getKey(), entry.getValue())));
+        return new KeyedStreamImpl<K2, V2>(entries.<Map.Entry<? extends K2, ? extends V2>>map(entry ->
+                entryMapper.apply(entry.getKey(), entry.getValue())));
     }
 
     @Override
-    @SuppressWarnings("unchecked") // Entries are internal to KeyedStream and never mutated so cast is safe
     public <K2, V2> KeyedStream<K2, V2> flatMapEntries(
             BiFunction<? super K, ? super V, ? extends Stream<? extends Entry<? extends K2, ? extends V2>>> entryMapper) {
         return new KeyedStreamImpl<K2, V2>(entries.flatMap(entry ->
-                (Stream<Map.Entry<K2, V2>>) entryMapper.apply(entry.getKey(), entry.getValue())));
+                entryMapper.apply(entry.getKey(), entry.getValue())));
     }
 
     @Override
@@ -75,7 +73,7 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
         return entries.map(Entry::getValue);
     }
 
-    private static <K, V> void accumulate(Map<K, V> map, Map.Entry<K, V> entry) {
+    private static <K, V> void accumulate(Map<K, V> map, Map.Entry<? extends K, ? extends V> entry) {
         checkState(!map.containsKey(entry.getKey()), "Duplicate key %s", entry.getKey());
         map.put(entry.getKey(), entry.getValue());
     }
@@ -87,7 +85,7 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
         map.putAll(entries);
     }
 
-    private static <K, V> void accumulate(Multimap<K, V> multimap, Map.Entry<K, V> entry) {
+    private static <K, V> void accumulate(Multimap<K, V> multimap, Map.Entry<? extends K, ? extends V> entry) {
         multimap.put(entry.getKey(), entry.getValue());
     }
 
