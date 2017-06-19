@@ -18,6 +18,7 @@ package com.palantir.common.streams;
 import static com.google.common.collect.Maps.immutableEntry;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -183,18 +184,27 @@ public interface KeyedStream<K, V> {
     /**
      * Returns a stream of the keys of each entry of this stream, dropping the associated values.
      */
-    Stream<K> keys();
+    default Stream<K> keys() {
+        return entries().map(Map.Entry::getKey);
+    }
 
     /**
      * Returns a stream of the values of each entry of this stream, dropping the associated keys.
      */
-    Stream<V> values();
+    default Stream<V> values() {
+        return entries().map(Map.Entry::getValue);
+    }
+
+    /**
+     * Returns a stream of {@link Map.Entry} instances.
+     */
+    Stream<Map.Entry<? extends K, ? extends V>> entries();
 
     /**
      * Returns a keyed stream with matching keys and values taken from {@code stream}.
      */
     static <V> KeyedStream<V, V> of(Stream<V> stream) {
-        return new KeyedStreamImpl<>(stream.map(value -> immutableEntry(value, value)));
+        return KeyedStream.ofEntries(stream.map(value -> immutableEntry(value, value)));
     }
 
     /**
@@ -215,14 +225,24 @@ public interface KeyedStream<K, V> {
      * Returns a keyed stream of Entries.
      */
     static <K, V> KeyedStream<K, V> ofEntries(Stream<Map.Entry<K, V>> entries) {
-        return new KeyedStreamImpl<>(entries);
+        return new KeyedStreamImpl<K, V>(entries.map(entry -> entry));
     }
 
     /**
      * Returns a keyed stream of {@code multimap}'s entries.
      */
     static <K, V> KeyedStream<K, V> stream(Multimap<K, V> multimap) {
-        return new KeyedStreamImpl<>(multimap.entries().stream());
+        return KeyedStream.ofEntries(multimap.entries().stream());
+    }
+
+    /**
+     * Returns a keyed stream of all entries in all streams
+     * Creates a lazily concatenated stream whose entries are all the entries of the first stream followed by all the
+     * elements of the second stream, and so on.
+     */
+    @SafeVarargs
+    static <K, V> KeyedStream<K, V> join(KeyedStream<? extends K, ? extends V>... keyedStreams) {
+        return new KeyedStreamImpl<K, V>(Arrays.stream(keyedStreams).flatMap(KeyedStream::entries));
     }
 
     /**
