@@ -15,10 +15,10 @@
  */
 package com.palantir.common.streams;
 
+import static java.util.Spliterators.spliteratorUnknownSize;
+
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -54,8 +54,7 @@ public class MoreStreams {
      * @return A stream for the iterator
      */
     public static <T> Stream<T> stream(Iterator<T> iterator) {
-        Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
-        return StreamSupport.stream(spliterator, NOT_PARALLEL);
+        return StreamSupport.stream(spliteratorUnknownSize(iterator, 0), NOT_PARALLEL);
     }
 
     private MoreStreams() {}
