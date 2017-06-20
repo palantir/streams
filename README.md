@@ -1,6 +1,6 @@
 # streams
 Utilities for working with [Java 8 streams][Stream]. [MoreStreams](#morestreams) provides a few convenient static methods; [KeyedStream](#keyedstream) makes
-working with streams of Map entries readable. [MoreCollectors](#morecollectors) provides collectors for immutable collections.
+working with streams of Map entries readable.
 
 [![CircleCI Build Status](https://circleci.com/gh/palantir/streams/tree/master.svg)](https://circleci.com/gh/palantir/streams)
 [![Download](https://api.bintray.com/packages/palantir/releases/streams/images/download.svg) ](https://bintray.com/palantir/releases/streams/_latestVersion)
