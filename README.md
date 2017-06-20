@@ -5,21 +5,6 @@ working with streams of Map entries readable. [MoreCollectors](#morecollectors) 
 [![CircleCI Build Status](https://circleci.com/gh/palantir/streams/tree/master.svg)](https://circleci.com/gh/palantir/streams)
 [![Download](https://api.bintray.com/packages/palantir/releases/streams/images/download.svg) ](https://bintray.com/palantir/releases/streams/_latestVersion)
 
-## MoreCollectors
-
-    import com.palantir.common.streams.MoreCollectors;
-
-MoreCollectors allows one to convert their stream directly into a collection that is immutable, the underlying collection type is not guaranteed.
-
-    Stream.of(1, 2, 3)
-        .map(v -> v * 2)
-        .collect(MoreCollectors.toImmutableList());
-
-The collectors currently provided:
-* toImmutableList()
-* toImmutableSet()
-* toImmutableMap()
-
 
 ## KeyedStream
 
