@@ -34,7 +34,9 @@ group 'com.palantir.common'
 version gitVersion()
 
 dependencies {
-  compile 'com.google.guava:guava:18.0'
+  // Pull Guava 21 for JavaDocs, but we don't need it at runtime
+  compileOnly 'com.google.guava:guava:21.0'
+  runtime 'com.google.guava:guava:18.0'
   testCompile 'junit:junit:4.12'
   testCompile 'com.google.truth:truth:0.28'
 }

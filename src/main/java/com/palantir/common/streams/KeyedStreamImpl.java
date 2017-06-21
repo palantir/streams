@@ -69,7 +69,7 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
     }
 
     private static <K, V> void accumulate(Map<K, V> map, Map.Entry<? extends K, ? extends V> entry) {
-        checkState(!map.containsKey(entry.getKey()), "Duplicate key %s", entry.getKey());
+        checkState(!map.containsKey(entry.getKey()), "Duplicate key %s", new Object[] { entry.getKey() });
         map.put(entry.getKey(), entry.getValue());
     }
 
