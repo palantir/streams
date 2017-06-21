@@ -31,7 +31,7 @@ targetCompatibility = "1.8"
 apply from: "${rootDir}/gradle/publish.gradle"
 
 group 'com.palantir.common'
-version gitVersion()
+version System.env.CIRCLE_TAG ?: gitVersion()
 
 dependencies {
   // Pull Guava 21 for JavaDocs, but we don't need it at runtime
