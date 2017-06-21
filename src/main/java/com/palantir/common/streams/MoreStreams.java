@@ -32,7 +32,7 @@ public class MoreStreams {
     /**
      * Returns a stream of the values returned by {@code iterable}.
      *
-     * @deprecated Use {@link com.google.common.base.Streams#stream(Iterable)}, available in Guava 21+
+     * @deprecated Use {@link com.google.common.collect.Streams#stream(Iterable)}, available in Guava 21+
      */
     @Deprecated
     public static <T> Stream<T> stream(Iterable<? extends T> iterable) {
@@ -45,7 +45,7 @@ public class MoreStreams {
      * Returns a stream containing the value held by {@code optionalValue}, or an empty stream
      * if {@code optionalValue} is empty.
      *
-     * @deprecated Use {@link com.google.common.base.Streams#stream(Optional)}, available in Guava 21+
+     * @deprecated Use {@link com.google.common.collect.Streams#stream(Optional)}, available in Guava 21+
      */
     @Deprecated
     public static <T> Stream<T> stream(Optional<T> optionalValue) {
@@ -59,7 +59,7 @@ public class MoreStreams {
      * @param <T> Type parameter for the iterator
      * @return A stream for the iterator
      *
-     * @deprecated Use {@link com.google.common.base.Streams#stream(Iterator)}, available in Guava 21+
+     * @deprecated Use {@link com.google.common.collect.Streams#stream(Iterator)}, available in Guava 21+
      */
     @Deprecated
     public static <T> Stream<T> stream(Iterator<T> iterator) {
