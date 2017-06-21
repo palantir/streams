@@ -1,5 +1,5 @@
 # streams
-Utilities for working with [Java 8 streams][Stream]. [MoreStreams](#morestreams) provides a few convenient static methods; [KeyedStream](#keyedstream) makes
+Utilities for working with [Java 8 streams][Stream]. [KeyedStream](#keyedstream) makes
 working with streams of Map entries readable.
 
 [![CircleCI Build Status](https://circleci.com/gh/palantir/streams/tree/master.svg)](https://circleci.com/gh/palantir/streams)
@@ -29,20 +29,3 @@ Each map function also accepts a [BiFunction], making it easy to modify keys bas
         .map((k, v) -> new FooType(k, v))  // keys remain unchanged
         .collectToMap();
 
-
-## MoreStreams
-
-    import static com.palantir.common.streams.MoreStreams.*;
-
-`MoreStreams::stream` creates streams from:
-
- * [Iterables][Iterable] (equivalent to the wordy `StreamSupport.stream(iterable.spliterator(), false)`)
- * [Optionals][] (equivalent to `optionalValue.map(Stream::of).orElse(Stream.of())`)
- * [Iterators][Iterator] (equivalent to `StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);`)
-
-[BiFunction]: https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html
-[Iterable]: https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html
-[Iterator]: https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html
-[Map]: https://docs.oracle.com/javase/8/docs/api/java/util/Map.html
-[Optionals]: https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html
-[Stream]: https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html

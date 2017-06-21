@@ -15,10 +15,10 @@
  */
 package com.palantir.common.streams;
 
+import static java.util.Spliterators.spliteratorUnknownSize;
+
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -31,7 +31,10 @@ public class MoreStreams {
 
     /**
      * Returns a stream of the values returned by {@code iterable}.
+     *
+     * @deprecated Use {@link com.google.common.base.Streams#stream(Iterable)}, available in Guava 21+
      */
+    @Deprecated
     public static <T> Stream<T> stream(Iterable<? extends T> iterable) {
         @SuppressWarnings("unchecked")
         Stream<T> stream = (Stream<T>) StreamSupport.stream(iterable.spliterator(), NOT_PARALLEL);
@@ -41,7 +44,10 @@ public class MoreStreams {
     /**
      * Returns a stream containing the value held by {@code optionalValue}, or an empty stream
      * if {@code optionalValue} is empty.
+     *
+     * @deprecated Use {@link com.google.common.base.Streams#stream(Optional)}, available in Guava 21+
      */
+    @Deprecated
     public static <T> Stream<T> stream(Optional<T> optionalValue) {
         return optionalValue.map(Stream::of).orElse(Stream.of());
     }
@@ -52,10 +58,12 @@ public class MoreStreams {
      * @param iterator Iterator for which a stream needs to be created
      * @param <T> Type parameter for the iterator
      * @return A stream for the iterator
+     *
+     * @deprecated Use {@link com.google.common.base.Streams#stream(Iterator)}, available in Guava 21+
      */
+    @Deprecated
     public static <T> Stream<T> stream(Iterator<T> iterator) {
-        Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
-        return StreamSupport.stream(spliterator, NOT_PARALLEL);
+        return StreamSupport.stream(spliteratorUnknownSize(iterator, 0), NOT_PARALLEL);
     }
 
     private MoreStreams() {}
