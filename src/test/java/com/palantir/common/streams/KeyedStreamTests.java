@@ -130,4 +130,39 @@ public class KeyedStreamTests {
         Map<Integer, Integer> map = KeyedStream.ofEntries(entryStream).collectToMap();
         assertThat(map).isEqualTo(ImmutableMap.of(1,1, 2,4, 3,9));
     }
+
+    @Test
+    public void test_for_each_key() {
+        List<Integer> values = ImmutableList.of(1, 2, 3);
+        List<Integer> result = new ArrayList<>();
+
+        KeyedStream.stream(Maps.toMap(values, x -> Integer.MIN_VALUE)).forEachKey(result::add);
+
+        assertThat(result).isEqualTo(values);
+    }
+
+    @Test
+    public void test_for_each_value() {
+        List<Integer> values = ImmutableList.of(1, 2, 3);
+        List<Integer> result = new ArrayList<>();
+
+        KeyedStream.of(values).mapKeys(key -> 0).forEach(value -> result.add(value));
+
+        assertThat(result).isEqualTo(values);
+    }
+
+    @Test
+    public void test_for_each_entry() {
+        List<Integer> values = ImmutableList.of(1, 2, 3);
+        List<Integer> result = new ArrayList<>();
+
+        KeyedStream.of(values)
+                .map(x -> x + 3)
+                .forEach((left, right) -> {
+                    result.add(left);
+                    result.add(right);
+                });
+
+        assertThat(result).containsExactly(1, 2, 3, 4, 5, 6);
+    }
 }

@@ -148,6 +148,27 @@ public interface KeyedStream<K, V> {
             BiFunction<? super K, ? super V, ? extends Stream<? extends Map.Entry<? extends K2, ? extends V2>>> entryMapper);
 
     /**
+     * Performs an action for each key in the stream.
+     */
+    default void forEachKey(Consumer<? super K> action) {
+        keys().forEach(action::accept);
+    }
+
+    /**
+     * Performs an action for each value in the stream.
+     */
+    default void forEach(Consumer<? super V> action) {
+        values().forEach(action::accept);
+    }
+
+    /**
+     * Performs an action for each key-value pair in the stream.
+     */
+    default void forEach(BiConsumer<? super K, ? super V> action) {
+        entries().forEach(entry -> action.accept(entry.getKey(), entry.getValue()));
+    }
+
+    /**
      * Accumulates the entries of this stream into a new map.
      *
      * <p>There are no guarantees on the type, mutability, serializability, or thread-safety of the
