@@ -20,6 +20,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.palantir.common.streams.KeyedStream.toKeyedStream;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -31,9 +33,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.google.common.collect.SetMultimap;
 
 public class KeyedStreamTests {
@@ -129,5 +133,40 @@ public class KeyedStreamTests {
                 .map(i -> new AbstractMap.SimpleEntry<>(i, i * i));
         Map<Integer, Integer> map = KeyedStream.ofEntries(entryStream).collectToMap();
         assertThat(map).isEqualTo(ImmutableMap.of(1,1, 2,4, 3,9));
+    }
+
+    @Test
+    public void test_for_each_key() {
+        List<Integer> values = ImmutableList.of(1, 2, 3);
+        List<Integer> result = new ArrayList<>();
+
+        KeyedStream.stream(Maps.toMap(values, x -> Integer.MIN_VALUE)).forEachKey(result::add);
+
+        assertThat(result).isEqualTo(values);
+    }
+
+    @Test
+    public void test_for_each_value() {
+        List<Integer> values = ImmutableList.of(1, 2, 3);
+        List<Integer> result = new ArrayList<>();
+
+        KeyedStream.of(values).mapKeys(key -> 0).forEach(value -> result.add(value));
+
+        assertThat(result).isEqualTo(values);
+    }
+
+    @Test
+    public void test_for_each_entry() {
+        List<Integer> values = ImmutableList.of(1, 2, 3);
+        List<Integer> result = new ArrayList<>();
+
+        KeyedStream.of(values)
+                .map(x -> x + 3)
+                .forEach((left, right) -> {
+                    result.add(left);
+                    result.add(right);
+                });
+
+        assertThat(result).containsExactly(1, 4, 2, 5, 3, 6).inOrder();
     }
 }
