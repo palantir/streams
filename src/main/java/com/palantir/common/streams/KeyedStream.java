@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -148,20 +147,6 @@ public interface KeyedStream<K, V> {
      */
     <K2, V2> KeyedStream<K2, V2> flatMapEntries(
             BiFunction<? super K, ? super V, ? extends Stream<? extends Map.Entry<? extends K2, ? extends V2>>> entryMapper);
-
-    /**
-     * Performs an action for each key in the stream.
-     */
-    default void forEachKey(Consumer<? super K> action) {
-        keys().forEach(action::accept);
-    }
-
-    /**
-     * Performs an action for each value in the stream.
-     */
-    default void forEach(Consumer<? super V> action) {
-        values().forEach(action::accept);
-    }
 
     /**
      * Performs an action for each key-value pair in the stream.
