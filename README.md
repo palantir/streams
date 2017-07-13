@@ -29,3 +29,7 @@ Each map function also accepts a [BiFunction], making it easy to modify keys bas
         .map((k, v) -> new FooType(k, v))  // keys remain unchanged
         .collectToMap();
 
+[BiFunction]: https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html
+[Iterable]: https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html
+[Map]: https://docs.oracle.com/javase/8/docs/api/java/util/Map.html
+[Stream]: https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html
