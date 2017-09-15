@@ -32,12 +32,11 @@ Each map function also accepts a [BiFunction], making it easy to modify keys bas
 ## MoreStreams
 
 Utility methods for streams. Currently supported is `inCompletionOrder`. It is tricky to handle streams of futures.
-
 Running
 
     foos.stream().map(executorService::submit).map(Futures::getUnchecked).collect(toList());
 
-will only execute one task at a time, losing the benefit of the concurrency.
+will only execute one task at a time, losing the benefit of concurrency.
 
 On the other hand, collecting to a [List] in the meantime can lead to other issues - not only it is inconvenient to
 stream twice, but there are plenty of issues that can appear, especially if the returned objects are large - there is
