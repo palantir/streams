@@ -117,8 +117,10 @@ public final class InCompletionOrderSpliteratorTests {
     @Test
     public void testEstimateSize_unsized() {
         when(sourceSpliterator.estimateSize()).thenReturn(Long.MAX_VALUE);
-        assertThat(new InCompletionOrderSpliterator<>(sourceSpliterator, 2).estimateSize())
-                .isEqualTo(Long.MAX_VALUE);
+        Spliterator<ListenableFuture<String>> spliterator = new InCompletionOrderSpliterator<>(sourceSpliterator, 1);
+        future.set("data");
+        spliterator.tryAdvance(consumer);
+        assertThat(spliterator.estimateSize()).isEqualTo(Long.MAX_VALUE);
     }
 
     private static class FutureContains<V> implements ArgumentMatcher<ListenableFuture<V>> {
