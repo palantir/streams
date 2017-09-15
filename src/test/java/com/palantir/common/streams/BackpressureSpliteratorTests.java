@@ -117,4 +117,18 @@ public final class BackpressureSpliteratorTests {
         verify(consumer).accept(data);
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
     }
+
+    @Test
+    public void testEstimateSize_hasSize() {
+        long estimate = 5L;
+        when(sourceSpliterator.estimateSize()).thenReturn(estimate);
+        assertThat(BackpressureSpliterator.create(2, sourceSpliterator).estimateSize()).isEqualTo(estimate + 2);
+    }
+
+    @Test
+    public void testEstimateSize_unsized() {
+        when(sourceSpliterator.estimateSize()).thenReturn(Long.MAX_VALUE);
+        assertThat(BackpressureSpliterator.create(2, sourceSpliterator).estimateSize())
+                .isEqualTo(Long.MAX_VALUE);
+    }
 }
