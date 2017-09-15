@@ -12,6 +12,11 @@
 *.iws
 .idea/
 
+# Generated files
+generated/
+generated_src/
+generated_testSrc/
+
 #Gradle
 .gradletasknamecache
 .gradle/
