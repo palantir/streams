@@ -38,39 +38,45 @@ public class MoreStreams {
     private static final boolean NOT_PARALLEL = false;
 
     /**
-     * Given a {@link Stream<U>} and a function that maps a U into a {@link CompletableFuture<V>}, this function will
-     * return a {@link Stream<V>}.
+     * Given a {@link Stream<CompletableFuture<U>>}, this function will return a {@link Stream<U>}
      *
-     * A pool of maxConcurrency futures will be unconsumed at any one time; the rate at which the consumer consumes
+     * A pool of maxParallelism futures will be unconsumed at any one time; the rate at which the consumer consumes
      * elements therefore provides back-pressure.
      *
      */
-    public static <U, V> Stream<V> inCompletionOrder(
-            Stream<U> arguments, Function<U, CompletableFuture<V>> mapper, int maxConcurrency) {
+    public static <U> Stream<U> inCompletionOrder(Stream<CompletableFuture<U>> arguments, int maxParallelism) {
         return StreamSupport.stream(
-                BackpressureSpliterator.create(maxConcurrency, arguments, mapper),
+                BackpressureSpliterator.create(maxParallelism, arguments.spliterator()),
                 NOT_PARALLEL);
     }
 
     /**
-     * A convenient variant of {@link #inCompletionOrder(Stream, Function, int)} in which the user passes in a
-     * synchronous function and an executor to run it on.
+     * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
+     * {@link Stream<U>} of elements and a mapping function to {@link CompletableFuture} objects.
+     *
      */
     public static <U, V> Stream<V> inCompletionOrder(
-            Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxConcurrency) {
-        return inCompletionOrder(
-                arguments,
-                (Function<U, CompletableFuture<V>>) x -> CompletableFuture.supplyAsync(() -> mapper.apply(x), executor),
-                maxConcurrency);
+            Stream<U> arguments, Function<U, CompletableFuture<V>> mappingFunction, int maxParallelism) {
+        return inCompletionOrder(arguments.map(mappingFunction), maxParallelism);
     }
 
     /**
-     * A convenient variant of {@link #inCompletionOrder(Stream, Function, int)} in which the user passes in a
+     * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
+     * synchronous function and an executor to run it on.
+     */
+    public static <U, V> Stream<V> inCompletionOrder(
+            Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
+        return inCompletionOrder(
+                arguments.map(x -> CompletableFuture.supplyAsync(() -> mapper.apply(x), executor)), maxParallelism);
+    }
+
+    /**
+     * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
      * Guava {@link AsyncFunction}.
      */
     public static <U, V> Stream<V> inCompletionOrder(
-            Stream<U> arguments, AsyncFunction<U, V> mapper, int maxConcurrency) {
-        return inCompletionOrder(arguments, toJava8AsyncFunction(mapper), maxConcurrency);
+            Stream<U> arguments, AsyncFunction<U, V> mapper, int maxParallelism) {
+        return inCompletionOrder(arguments.map(toJava8AsyncFunction(mapper)), maxParallelism);
     }
 
     /**

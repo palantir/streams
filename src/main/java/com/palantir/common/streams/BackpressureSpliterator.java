@@ -22,38 +22,34 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
-class BackpressureSpliterator<U, V> implements Spliterator<V> {
-    private final int desiredConcurrency;
-    private final BlockingQueue<CompletableFuture<V>> completed;
-    private final Spliterator<U> notStarted;
-    private final Function<U, CompletableFuture<V>> mapper;
+class BackpressureSpliterator<U> implements Spliterator<U> {
+    private final int desiredParallelism;
+    private final BlockingQueue<CompletableFuture<U>> completed;
+    private final Spliterator<CompletableFuture<U>> notStarted;
 
     private int inProgress = 0;
 
     private BackpressureSpliterator(
-            int desiredConcurrency,
-            Spliterator<U> arguments,
-            Function<U, CompletableFuture<V>> mapper) {
-        checkArgument(desiredConcurrency > 0, "desiredConcurrency %s > 0", new Object[] { desiredConcurrency });
-        this.desiredConcurrency = desiredConcurrency;
-        this.completed = new ArrayBlockingQueue<>(desiredConcurrency);
+            int desiredParallelism,
+            Spliterator<CompletableFuture<U>> arguments) {
+        checkArgument(desiredParallelism > 0, "desiredParallelism %s > 0", new Object[] { desiredParallelism });
+        this.desiredParallelism = desiredParallelism;
+        this.completed = new ArrayBlockingQueue<>(desiredParallelism);
         this.notStarted = arguments;
-        this.mapper = mapper;
     }
 
     @Override
-    public boolean tryAdvance(Consumer<? super V> action) {
-        startNewWorkIfNecessary();
+    public boolean tryAdvance(Consumer<? super U> action) {
         if (inProgress == 0) {
             return false;
         }
 
         try {
-            V element = completed.take().join();
+            U element = completed.take().join();
             inProgress--;
+            startNewWorkIfNecessary();
             action.accept(element);
             return true;
         } catch (InterruptedException e) {
@@ -63,16 +59,15 @@ class BackpressureSpliterator<U, V> implements Spliterator<V> {
     }
 
     @Override
-    public Spliterator<V> trySplit() {
+    public Spliterator<U> trySplit() {
         return null;
     }
 
     private void startNewWorkIfNecessary() {
-        while (inProgress < desiredConcurrency) {
+        while (inProgress < desiredParallelism) {
             boolean maybeRemainingElements = notStarted.tryAdvance(nextInput -> {
-                CompletableFuture<V> nextFuture = mapper.apply(nextInput);
                 inProgress++;
-                nextFuture.whenComplete((res, err) -> completed.add(nextFuture));
+                nextInput.whenComplete((res, err) -> completed.add(nextInput));
             });
             if (!maybeRemainingElements) {
                 return;
@@ -103,12 +98,8 @@ class BackpressureSpliterator<U, V> implements Spliterator<V> {
         return (Spliterator.SIZED | Spliterator.SUBSIZED) & notStarted.characteristics();
     }
 
-    static <U, V> Spliterator<V> create(
-            int desiredConcurrency,
-            Stream<U> arguments,
-            Function<U, CompletableFuture<V>> mapper) {
-        BackpressureSpliterator<U, V> result = new BackpressureSpliterator<>(
-                desiredConcurrency, arguments.spliterator(), mapper);
+    static <U> Spliterator<U> create(int desiredParallelism, Spliterator<CompletableFuture<U>> arguments) {
+        BackpressureSpliterator<U> result = new BackpressureSpliterator<>(desiredParallelism, arguments);
         result.startNewWorkIfNecessary();
         return result;
     }

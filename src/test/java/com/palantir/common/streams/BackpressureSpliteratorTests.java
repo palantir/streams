@@ -3,17 +3,12 @@ package com.palantir.common.streams;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.Before;
@@ -28,19 +23,27 @@ public final class BackpressureSpliteratorTests {
     private final CompletableFuture<String> otherFuture = new CompletableFuture<>();
 
     @Mock private Consumer<String> consumer;
-    @Mock private Function<CompletableFuture<String>, CompletableFuture<String>> identityFunction;
+
+    @Mock private Spliterator<CompletableFuture<String>> sourceSpliterator;
 
     @Before
     public void before() {
-        when(identityFunction.apply(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(sourceSpliterator.tryAdvance(any())).thenAnswer(x -> {
+            Consumer<CompletableFuture<String>> consumer = x.getArgument(0);
+            consumer.accept(future);
+            return true;
+        }).thenAnswer(x -> {
+            Consumer<CompletableFuture<String>> consumer = x.getArgument(0);
+            consumer.accept(otherFuture);
+            return true;
+        }).thenReturn(false);
     }
 
     @Test
     public void returnsFalseWhenAllFuturesCompleted() {
         Spliterator<String> spliterator = BackpressureSpliterator.create(
                 1,
-                Stream.<String>empty(),
-                CompletableFuture::completedFuture);
+                Stream.<CompletableFuture<String>>empty().spliterator());
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
         verifyZeroInteractions(consumer);
     }
@@ -48,19 +51,17 @@ public final class BackpressureSpliteratorTests {
     @Test
     public void throwsIfSuppliedFutureThrows() {
         CompletableFuture<String> someFuture = new CompletableFuture<>();
-        Spliterator<String> spliterator = BackpressureSpliterator.create(1, Stream.of(someFuture), identityFunction);
+        Spliterator<String> spliterator =
+                BackpressureSpliterator.create(1, Stream.of(someFuture).spliterator());
         someFuture.completeExceptionally(new RuntimeException());
         assertThatExceptionOfType(CompletionException.class).isThrownBy(() -> spliterator.tryAdvance(consumer));
     }
 
     @Test
     public void onlyRunsUpToDesiredConcurrencyTasksSimultaneously() {
-        Spliterator<String> spliterator = BackpressureSpliterator.create(
-                1,
-                Stream.of(future, otherFuture),
-                identityFunction);
+        Spliterator<String> spliterator = BackpressureSpliterator.create(1, sourceSpliterator);
 
-        verify(identityFunction, never()).apply(otherFuture);
+        verify(sourceSpliterator, times(1)).tryAdvance(any());
         String firstData = "firstData";
         future.complete(firstData);
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
@@ -76,27 +77,31 @@ public final class BackpressureSpliteratorTests {
     }
 
     @Test
-    public void doesNotStartNextTaskUntilDoneWithLastValue() {
-        Spliterator<String> spliterator = BackpressureSpliterator.create(
-                1,
-                Stream.of(future, otherFuture),
-                identityFunction);
-
-        future.complete("data");
-        spliterator.tryAdvance(consumer);
-
-        verify(identityFunction, never()).apply(otherFuture);
-    }
-
-    @Test
     public void runsDesiredConcurrencyTasksSimultaneously() {
         BackpressureSpliterator.create(
                 2,
-                Stream.of(future, otherFuture),
-                identityFunction);
+                sourceSpliterator);
 
-        verify(identityFunction).apply(future);
-        verify(identityFunction).apply(otherFuture);
+        verify(sourceSpliterator, times(2)).tryAdvance(any());
+    }
+
+    @Test
+    public void startNextTaskBeforeConsumingValue() {
+        Spliterator<String> spliterator = BackpressureSpliterator.create(
+                1,
+                sourceSpliterator);
+
+        String data = "data";
+        future.complete(data);
+        otherFuture.complete("some other data");
+
+        // check that we kicked off next task before the consumer has been called
+        doAnswer(inv -> {
+            verify(sourceSpliterator, times(2)).tryAdvance(any());
+            return null;
+        }).when(consumer).accept(data);
+
+        spliterator.tryAdvance(consumer);
     }
 
     // This test exists because of an implementation bug while writing this.
@@ -106,7 +111,7 @@ public final class BackpressureSpliteratorTests {
         String data = "data";
         someFuture.complete(data);
 
-        Spliterator<String> spliterator = BackpressureSpliterator.create(1, Stream.of(someFuture), identityFunction);
+        Spliterator<String> spliterator = BackpressureSpliterator.create(1, Stream.of(someFuture).spliterator());
 
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
         verify(consumer).accept(data);
