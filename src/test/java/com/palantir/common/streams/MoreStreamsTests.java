@@ -20,12 +20,6 @@ public class MoreStreamsTests {
     }
 
     @Test
-    public void testInCompletionOrder_transformToListenableFuture() {
-        assertThat(MoreStreams.inCompletionOrder(Stream.of(DATA), Futures::immediateFuture, 1)
-                .map(Futures::getUnchecked)).containsExactly(DATA);
-    }
-
-    @Test
     public void testInCompletionOrder_transformWithExecutor() {
         assertThat(MoreStreams.inCompletionOrder(Stream.of(DATA), x -> x, MoreExecutors.directExecutor(), 1)
                 .map(Futures::getUnchecked)).containsExactly(DATA);

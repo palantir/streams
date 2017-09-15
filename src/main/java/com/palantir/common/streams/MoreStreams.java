@@ -36,8 +36,8 @@ public class MoreStreams {
     private static final boolean NOT_PARALLEL = false;
 
     /**
-     * Given a {@code Stream<CompletableFuture<U>>}, this function will return a blocking stream of results in
-     * completion order, looking at most {@code maxParallelism} futures ahead in the stream.
+     * Given a {@code Stream<ListenableFuture<U>>}, this function will return a blocking stream of the completed
+     * futures in completion order, looking at most {@code maxParallelism} futures ahead in the stream.
      */
     public static <U> Stream<ListenableFuture<U>> inCompletionOrder(
             Stream<ListenableFuture<U>> arguments, int maxParallelism) {
@@ -53,17 +53,6 @@ public class MoreStreams {
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
         return inCompletionOrder(
                 arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
-                maxParallelism);
-    }
-
-    /**
-     * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
-     * Guava {@link AsyncFunction}.
-     */
-    public static <U, V> Stream<ListenableFuture<V>> inCompletionOrder(
-            Stream<U> arguments, AsyncFunction<U, V> mapper, int maxParallelism) {
-        return inCompletionOrder(
-                arguments.map(x -> Futures.transformAsync(Futures.immediateFuture(x), mapper)),
                 maxParallelism);
     }
 
