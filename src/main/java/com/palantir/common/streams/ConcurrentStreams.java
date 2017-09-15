@@ -47,7 +47,7 @@ public class ConcurrentStreams {
                 .collect(Collectors.toList());
         Queue<StreamElement<T, S>> queue = new ConcurrentLinkedQueue<>(elements);
 
-        int numThreads = size < concurrency ? size : concurrency;
+        int numThreads = Math.min(size, concurrency);
         for (int i = 0; i < numThreads; i++) {
             executor.execute(() -> runOperationsAndUpdateFutures(queue, mapper));
         }
