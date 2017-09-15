@@ -15,10 +15,18 @@
  */
 package com.palantir.common.streams;
 
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -28,6 +36,42 @@ import java.util.stream.StreamSupport;
 public class MoreStreams {
 
     private static final boolean NOT_PARALLEL = false;
+
+    /**
+     * Given a {@link Stream<U>} and a function that maps a U into a {@link CompletableFuture<V>}, this function will
+     * return a {@link Stream<V>}.
+     *
+     * A pool of maxConcurrency futures will be unconsumed at any one time; the rate at which the consumer consumes
+     * elements therefore provides back-pressure.
+     *
+     */
+    public static <U, V> Stream<V> inCompletionOrder(
+            Stream<U> arguments, Function<U, CompletableFuture<V>> mapper, int maxConcurrency) {
+        return StreamSupport.stream(
+                BackpressureSpliterator.create(maxConcurrency, arguments, mapper),
+                NOT_PARALLEL);
+    }
+
+    /**
+     * A convenient variant of {@link #inCompletionOrder(Stream, Function, int)} in which the user passes in a
+     * synchronous function and an executor to run it on.
+     */
+    public static <U, V> Stream<V> inCompletionOrder(
+            Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxConcurrency) {
+        return inCompletionOrder(
+                arguments,
+                (Function<U, CompletableFuture<V>>) x -> CompletableFuture.supplyAsync(() -> mapper.apply(x), executor),
+                maxConcurrency);
+    }
+
+    /**
+     * A convenient variant of {@link #inCompletionOrder(Stream, Function, int)} in which the user passes in a
+     * Guava {@link AsyncFunction}.
+     */
+    public static <U, V> Stream<V> inCompletionOrder(
+            Stream<U> arguments, AsyncFunction<U, V> mapper, int maxConcurrency) {
+        return inCompletionOrder(arguments, toJava8AsyncFunction(mapper), maxConcurrency);
+    }
 
     /**
      * Returns a stream of the values returned by {@code iterable}.
@@ -64,6 +108,38 @@ public class MoreStreams {
     @Deprecated
     public static <T> Stream<T> stream(Iterator<T> iterator) {
         return StreamSupport.stream(spliteratorUnknownSize(iterator, 0), NOT_PARALLEL);
+    }
+
+    private static <U, V> Function<U, CompletableFuture<V>> toJava8AsyncFunction(
+            AsyncFunction<U, V> asyncFunction) {
+        return x -> {
+            try {
+                return toCompletableFuture(asyncFunction.apply(x));
+            } catch (Exception e) {
+                CompletableFuture<V> result = new CompletableFuture<>();
+                result.completeExceptionally(e);
+                return result;
+            }
+        };
+    }
+
+    private static <V> CompletableFuture<V> toCompletableFuture(ListenableFuture<V> listenableFuture) {
+        CompletableFuture<V> future = new CompletableFuture<>();
+
+        Futures.addCallback(listenableFuture, new FutureCallback<V>() {
+
+            @Override
+            public void onSuccess(V result) {
+                future.complete(result);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                future.completeExceptionally(t);
+            }
+        });
+
+        return future;
     }
 
     private MoreStreams() {}
