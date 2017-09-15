@@ -29,7 +29,30 @@ Each map function also accepts a [BiFunction], making it easy to modify keys bas
         .map((k, v) -> new FooType(k, v))  // keys remain unchanged
         .collectToMap();
 
+## MoreStreams
+
+Utility methods for streams. Currently supported is `inCompletionOrder`. It is tricky to handle streams of futures.
+
+Running
+
+    foos.stream().map(executorService::submit).map(Futures::getUnchecked).collect(toList());
+
+will only execute one task at a time, losing the benefit of the concurrency.
+
+On the other hand, collecting to a [List] in the meantime can lead to other issues - not only it is inconvenient to
+stream twice, but there are plenty of issues that can appear, especially if the returned objects are large - there is
+no back-pressure mechanism.
+
+Instead, consider calling
+
+    MoreStreams.inCompletionOrder(foos.stream().map(listeningExecutorService::submit), maxParallelism)
+        .map(Futures::getUnchecked).collect(toList());
+
+which will provide a new stream which looks ahead up to `maxParallelism` items in the provided future stream, ensuring
+that only `maxParallelism` futures exist at any one time.
+
 [BiFunction]: https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html
 [Iterable]: https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html
+[List]: https://docs.oracle.com/javase/8/docs/api/java/util/List.html
 [Map]: https://docs.oracle.com/javase/8/docs/api/java/util/Map.html
 [Stream]: https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html

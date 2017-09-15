@@ -21,7 +21,7 @@ public class MoreStreamsTests {
 
     @Test
     public void testInCompletionOrder_transformWithExecutor() {
-        assertThat(MoreStreams.inCompletionOrder(Stream.of(DATA), x -> x, MoreExecutors.directExecutor(), 1)
-                .map(Futures::getUnchecked)).containsExactly(DATA);
+        assertThat(MoreStreams.inCompletionOrder(Stream.of(DATA), x -> x, MoreExecutors.directExecutor(), 1))
+                .containsExactly(DATA);
     }
 }

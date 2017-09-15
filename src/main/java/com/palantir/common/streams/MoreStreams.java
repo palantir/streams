@@ -49,11 +49,12 @@ public class MoreStreams {
      * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
      * function and an executor to run it on.
      */
-    public static <U, V> Stream<ListenableFuture<V>> inCompletionOrder(
+    public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
         return inCompletionOrder(
                 arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
-                maxParallelism);
+                maxParallelism)
+                .map(Futures::getUnchecked);
     }
 
     /**
