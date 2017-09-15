@@ -41,7 +41,7 @@ public final class BackpressureSpliteratorTests {
 
     @Test
     public void returnsFalseWhenAllFuturesCompleted() {
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(1, Stream.<CompletableFuture<String>>empty().spliterator());
+        Spliterator<String> spliterator = new BackpressureSpliterator<>(Stream.<CompletableFuture<String>>empty().spliterator(), 1);
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
         verifyZeroInteractions(consumer);
     }
@@ -50,14 +50,14 @@ public final class BackpressureSpliteratorTests {
     public void throwsIfSuppliedFutureThrows() {
         CompletableFuture<String> someFuture = new CompletableFuture<>();
         Spliterator<String> spliterator =
-                new BackpressureSpliterator<>(1, Stream.of(someFuture).spliterator());
+                new BackpressureSpliterator<>(Stream.of(someFuture).spliterator(), 1);
         someFuture.completeExceptionally(new RuntimeException());
         assertThatExceptionOfType(CompletionException.class).isThrownBy(() -> spliterator.tryAdvance(consumer));
     }
 
     @Test
     public void onlyRunsUpToDesiredConcurrencyTasksSimultaneously() {
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(1, sourceSpliterator);
+        Spliterator<String> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 1);
 
         String firstData = "firstData";
         future.complete(firstData);
@@ -77,7 +77,7 @@ public final class BackpressureSpliteratorTests {
     @Test
     public void runsDesiredConcurrencyTasksSimultaneously() {
         future.complete("some string");
-        new BackpressureSpliterator<>(2, sourceSpliterator).tryAdvance(consumer);
+        new BackpressureSpliterator<>(sourceSpliterator, 2).tryAdvance(consumer);
 
         verify(sourceSpliterator, times(2)).tryAdvance(any());
     }
@@ -85,7 +85,7 @@ public final class BackpressureSpliteratorTests {
     @Test
     public void doesNotStartNextTaskUntilDoneWithLastValue() {
         future.complete("some string");
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(1, sourceSpliterator);
+        Spliterator<String> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 1);
 
         future.complete("data");
         spliterator.tryAdvance(consumer);
@@ -96,11 +96,10 @@ public final class BackpressureSpliteratorTests {
     // This test exists because of an implementation bug while writing this.
     @Test
     public void canHandleFutureAlreadyCompleted() {
-        CompletableFuture<String> someFuture = new CompletableFuture<>();
         String data = "data";
-        someFuture.complete(data);
+        CompletableFuture<String> someFuture = CompletableFuture.completedFuture(data);
 
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(1, Stream.of(someFuture).spliterator());
+        Spliterator<String> spliterator = new BackpressureSpliterator<>(Stream.of(someFuture).spliterator(), 1);
 
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
         verify(consumer).accept(data);
@@ -112,7 +111,7 @@ public final class BackpressureSpliteratorTests {
         future.complete("some string");
         long estimate = 5L;
         when(sourceSpliterator.estimateSize()).thenReturn(estimate);
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(2, sourceSpliterator);
+        Spliterator<String> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 2);
         spliterator.tryAdvance(consumer);
         assertThat(spliterator.estimateSize()).isEqualTo(estimate + 1);
     }
@@ -120,7 +119,7 @@ public final class BackpressureSpliteratorTests {
     @Test
     public void testEstimateSize_unsized() {
         when(sourceSpliterator.estimateSize()).thenReturn(Long.MAX_VALUE);
-        assertThat(new BackpressureSpliterator<>(2, sourceSpliterator).estimateSize())
+        assertThat(new BackpressureSpliterator<>(sourceSpliterator, 2).estimateSize())
                 .isEqualTo(Long.MAX_VALUE);
     }
 }

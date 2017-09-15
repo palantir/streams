@@ -38,21 +38,17 @@ public class MoreStreams {
     private static final boolean NOT_PARALLEL = false;
 
     /**
-     * Given a {@code Stream<CompletableFuture<U>>}, this function will return a {@link Stream<U>}
-     *
-     * A pool of maxParallelism futures will be unconsumed at any one time; the rate at which the consumer consumes
-     * elements therefore provides back-pressure.
-     *
+     * Given a {@code Stream<CompletableFuture<U>>}, this function will return a blocking stream of results in
+     * completion order, looking at most {@code maxParallelism} futures ahead in the stream.
      */
     public static <U> Stream<U> inCompletionOrder(Stream<CompletableFuture<U>> arguments, int maxParallelism) {
         return StreamSupport.stream(
-                new BackpressureSpliterator<>(maxParallelism, arguments.spliterator()), NOT_PARALLEL);
+                new BackpressureSpliterator<>(arguments.spliterator(), maxParallelism), NOT_PARALLEL);
     }
 
     /**
      * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
      * {@link Stream<U>} of elements and a mapping function to {@link CompletableFuture} objects.
-     *
      */
     public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, Function<U, CompletableFuture<V>> mappingFunction, int maxParallelism) {
@@ -61,7 +57,7 @@ public class MoreStreams {
 
     /**
      * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
-     * synchronous function and an executor to run it on.
+     * function and an executor to run it on.
      */
     public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
@@ -75,7 +71,7 @@ public class MoreStreams {
      */
     public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, AsyncFunction<U, V> mapper, int maxParallelism) {
-        return inCompletionOrder(arguments.map(toJava8AsyncFunction(mapper)), maxParallelism);
+        return inCompletionOrder(arguments.map(ListenableFutures.toJava8AsyncFunction(mapper)), maxParallelism);
     }
 
     /**
@@ -115,37 +111,6 @@ public class MoreStreams {
         return StreamSupport.stream(spliteratorUnknownSize(iterator, 0), NOT_PARALLEL);
     }
 
-    private static <U, V> Function<U, CompletableFuture<V>> toJava8AsyncFunction(
-            AsyncFunction<U, V> asyncFunction) {
-        return x -> {
-            try {
-                return toCompletableFuture(asyncFunction.apply(x));
-            } catch (Exception e) {
-                CompletableFuture<V> result = new CompletableFuture<>();
-                result.completeExceptionally(e);
-                return result;
-            }
-        };
-    }
-
-    private static <V> CompletableFuture<V> toCompletableFuture(ListenableFuture<V> listenableFuture) {
-        CompletableFuture<V> future = new CompletableFuture<>();
-
-        Futures.addCallback(listenableFuture, new FutureCallback<V>() {
-
-            @Override
-            public void onSuccess(V result) {
-                future.complete(result);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                future.completeExceptionally(t);
-            }
-        });
-
-        return future;
-    }
 
     private MoreStreams() {}
 }

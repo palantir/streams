@@ -30,14 +30,12 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
 
     private int inProgress = 0;
 
-    BackpressureSpliterator(
-            int maxParallelism,
-            Spliterator<CompletableFuture<U>> arguments) {
+    BackpressureSpliterator(Spliterator<CompletableFuture<U>> futures, int maxParallelism) {
         checkArgument(maxParallelism > 0,
                 "maxParallelism must be at least 1 (got %s)", new Object[] {maxParallelism});
         this.maxParallelism = maxParallelism;
         this.completed = new ArrayBlockingQueue<>(maxParallelism);
-        this.notStarted = arguments;
+        this.notStarted = futures;
     }
 
     @Override
