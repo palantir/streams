@@ -42,16 +42,23 @@ On the other hand, collecting to a [List] in the meantime can lead to other issu
 stream twice, but there are plenty of issues that can appear, especially if the returned objects are large - there is
 no back-pressure mechanism.
 
-Instead, consider calling
+Instead, when a [ListenableFuture] can be returned by a function, consider calling
 
-    MoreStreams.inCompletionOrder(foos.stream().map(listeningExecutorService::submit), maxParallelism)
-        .map(Futures::getUnchecked).collect(toList());
+    MoreStreams.inCompletionOrder(foos.stream().map(service::getBarAsync), maxParallelism)
+        .map(Futures::getUnchecked)
+        .collect(toList());
 
-which will provide a new stream which looks ahead up to `maxParallelism` items in the provided future stream, ensuring
-that only `maxParallelism` futures exist at any one time.
+which will provide a new stream which looks ahead up to `maxParallelism` items in the provided stream of Guava
+futures, ensuring that only `maxParallelism` futures exist at any one time.
+
+In some cases, it may not be beneficial to push down the async computation. Here, one can provide their own
+executor, calling
+
+    MoreStreams.inCompletionOrder(foos.stream(), service::getBar, executor, maxParallelism).collect(toList());
 
 [BiFunction]: https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html
 [Iterable]: https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html
 [List]: https://docs.oracle.com/javase/8/docs/api/java/util/List.html
+[ListenableFuture]: https://google.github.io/guava/releases/23.0/api/docs/com/google/common/util/concurrent/ListenableFuture.html
 [Map]: https://docs.oracle.com/javase/8/docs/api/java/util/Map.html
 [Stream]: https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html
