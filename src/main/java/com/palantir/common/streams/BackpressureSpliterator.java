@@ -30,7 +30,7 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
 
     private int inProgress = 0;
 
-    private BackpressureSpliterator(
+    BackpressureSpliterator(
             int maxParallelism,
             Spliterator<CompletableFuture<U>> arguments) {
         checkArgument(maxParallelism > 0,
@@ -42,6 +42,7 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
 
     @Override
     public boolean tryAdvance(Consumer<? super U> action) {
+        startNewWorkIfNecessary();
         if (inProgress == 0) {
             return false;
         }
@@ -49,7 +50,6 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
         try {
             U element = completed.take().join();
             inProgress--;
-            startNewWorkIfNecessary();
             action.accept(element);
             return true;
         } catch (InterruptedException e) {
@@ -87,11 +87,5 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
     @Override
     public int characteristics() {
         return Spliterator.SIZED & notStarted.characteristics();
-    }
-
-    static <U> Spliterator<U> create(int desiredParallelism, Spliterator<CompletableFuture<U>> arguments) {
-        BackpressureSpliterator<U> result = new BackpressureSpliterator<>(desiredParallelism, arguments);
-        result.startNewWorkIfNecessary();
-        return result;
     }
 }
