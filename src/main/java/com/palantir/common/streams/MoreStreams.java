@@ -41,37 +41,32 @@ public class MoreStreams {
      * Given a {@code Stream<CompletableFuture<U>>}, this function will return a blocking stream of results in
      * completion order, looking at most {@code maxParallelism} futures ahead in the stream.
      */
-    public static <U> Stream<U> inCompletionOrder(Stream<CompletableFuture<U>> arguments, int maxParallelism) {
+    public static <U> Stream<ListenableFuture<U>> inCompletionOrder(
+            Stream<ListenableFuture<U>> arguments, int maxParallelism) {
         return StreamSupport.stream(
                 new BackpressureSpliterator<>(arguments.spliterator(), maxParallelism), NOT_PARALLEL);
     }
 
     /**
      * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
-     * {@link Stream} of elements and a mapping function to {@link CompletableFuture} objects.
-     */
-    public static <U, V> Stream<V> inCompletionOrder(
-            Stream<U> arguments, Function<U, CompletableFuture<V>> mappingFunction, int maxParallelism) {
-        return inCompletionOrder(arguments.map(mappingFunction), maxParallelism);
-    }
-
-    /**
-     * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
      * function and an executor to run it on.
      */
-    public static <U, V> Stream<V> inCompletionOrder(
+    public static <U, V> Stream<ListenableFuture<V>> inCompletionOrder(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
         return inCompletionOrder(
-                arguments.map(x -> CompletableFuture.supplyAsync(() -> mapper.apply(x), executor)), maxParallelism);
+                arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
+                maxParallelism);
     }
 
     /**
      * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
      * Guava {@link AsyncFunction}.
      */
-    public static <U, V> Stream<V> inCompletionOrder(
+    public static <U, V> Stream<ListenableFuture<V>> inCompletionOrder(
             Stream<U> arguments, AsyncFunction<U, V> mapper, int maxParallelism) {
-        return inCompletionOrder(arguments.map(ListenableFutures.toJava8AsyncFunction(mapper)), maxParallelism);
+        return inCompletionOrder(
+                arguments.map(x -> Futures.transformAsync(Futures.immediateFuture(x), mapper)),
+                maxParallelism);
     }
 
     /**

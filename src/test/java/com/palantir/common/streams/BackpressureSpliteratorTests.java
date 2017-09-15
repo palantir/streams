@@ -6,34 +6,37 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.Spliterator;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public final class BackpressureSpliteratorTests {
-    private final CompletableFuture<String> future = new CompletableFuture<>();
-    private final CompletableFuture<String> otherFuture = new CompletableFuture<>();
+    private final SettableFuture<String> future = SettableFuture.create();
+    private final SettableFuture<String> otherFuture = SettableFuture.create();
 
-    @Mock private Consumer<String> consumer;
+    @Mock private Consumer<ListenableFuture<String>> consumer;
 
-    @Mock private Spliterator<CompletableFuture<String>> sourceSpliterator;
+    @Mock private Spliterator<ListenableFuture<String>> sourceSpliterator;
 
     @Before
     public void before() {
         when(sourceSpliterator.tryAdvance(any())).thenAnswer(x -> {
-            Consumer<CompletableFuture<String>> consumer = x.getArgument(0);
+            Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
             consumer.accept(future);
             return true;
         }).thenAnswer(x -> {
-            Consumer<CompletableFuture<String>> consumer = x.getArgument(0);
+            Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
             consumer.accept(otherFuture);
             return true;
         }).thenReturn(false);
@@ -41,34 +44,26 @@ public final class BackpressureSpliteratorTests {
 
     @Test
     public void returnsFalseWhenAllFuturesCompleted() {
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(Stream.<CompletableFuture<String>>empty().spliterator(), 1);
+        Spliterator<ListenableFuture<String>> spliterator =
+                new BackpressureSpliterator<>(Stream.<ListenableFuture<String>>empty().spliterator(), 1);
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
         verifyZeroInteractions(consumer);
     }
 
     @Test
-    public void throwsIfSuppliedFutureThrows() {
-        CompletableFuture<String> someFuture = new CompletableFuture<>();
-        Spliterator<String> spliterator =
-                new BackpressureSpliterator<>(Stream.of(someFuture).spliterator(), 1);
-        someFuture.completeExceptionally(new RuntimeException());
-        assertThatExceptionOfType(CompletionException.class).isThrownBy(() -> spliterator.tryAdvance(consumer));
-    }
-
-    @Test
     public void onlyRunsUpToDesiredConcurrencyTasksSimultaneously() {
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 1);
+        Spliterator<ListenableFuture<String>> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 1);
 
         String firstData = "firstData";
-        future.complete(firstData);
+        future.set(firstData);
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
         verify(sourceSpliterator, times(1)).tryAdvance(any());
-        verify(consumer).accept(firstData);
+        verify(consumer).accept(argThat(new FutureContains<>(firstData)));
 
         String secondData = "secondData";
-        otherFuture.complete(secondData);
+        otherFuture.set(secondData);
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
-        verify(consumer).accept(secondData);
+        verify(consumer).accept(argThat(new FutureContains<>(secondData)));
 
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
         verifyNoMoreInteractions(consumer);
@@ -76,7 +71,7 @@ public final class BackpressureSpliteratorTests {
 
     @Test
     public void runsDesiredConcurrencyTasksSimultaneously() {
-        future.complete("some string");
+        future.set("some string");
         new BackpressureSpliterator<>(sourceSpliterator, 2).tryAdvance(consumer);
 
         verify(sourceSpliterator, times(2)).tryAdvance(any());
@@ -84,10 +79,10 @@ public final class BackpressureSpliteratorTests {
 
     @Test
     public void doesNotStartNextTaskUntilDoneWithLastValue() {
-        future.complete("some string");
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 1);
+        future.set("some string");
+        Spliterator<ListenableFuture<String>> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 1);
 
-        future.complete("data");
+        future.set("data");
         spliterator.tryAdvance(consumer);
 
         verify(sourceSpliterator, times(1)).tryAdvance(any());
@@ -97,23 +92,28 @@ public final class BackpressureSpliteratorTests {
     @Test
     public void canHandleFutureAlreadyCompleted() {
         String data = "data";
-        CompletableFuture<String> someFuture = CompletableFuture.completedFuture(data);
+        ListenableFuture<String> someFuture = Futures.immediateFuture(data);
 
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(Stream.of(someFuture).spliterator(), 1);
+        Spliterator<ListenableFuture<String>> spliterator =
+                new BackpressureSpliterator<>(Stream.of(someFuture).spliterator(), 1);
 
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
-        verify(consumer).accept(data);
+        verify(consumer).accept(argThat(new FutureContains<>(data)));
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
     }
 
     @Test
     public void testEstimateSize_hasSize() {
-        future.complete("some string");
-        long estimate = 5L;
-        when(sourceSpliterator.estimateSize()).thenReturn(estimate);
-        Spliterator<String> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 2);
+        Spliterator<ListenableFuture<String>> futures =
+                Stream.<ListenableFuture<String>>of(future, otherFuture).spliterator();
+        Spliterator<ListenableFuture<String>> spliterator = new BackpressureSpliterator<>(futures, 1);
+        assertThat(spliterator.estimateSize()).isEqualTo(2);
+        future.set("data");
         spliterator.tryAdvance(consumer);
-        assertThat(spliterator.estimateSize()).isEqualTo(estimate + 1);
+        assertThat(spliterator.estimateSize()).isEqualTo(1);
+        otherFuture.set("data");
+        spliterator.tryAdvance(consumer);
+        assertThat(spliterator.estimateSize()).isEqualTo(0);
     }
 
     @Test
@@ -121,5 +121,18 @@ public final class BackpressureSpliteratorTests {
         when(sourceSpliterator.estimateSize()).thenReturn(Long.MAX_VALUE);
         assertThat(new BackpressureSpliterator<>(sourceSpliterator, 2).estimateSize())
                 .isEqualTo(Long.MAX_VALUE);
+    }
+
+    private static class FutureContains<V> implements ArgumentMatcher<ListenableFuture<V>> {
+        private final V value;
+
+        private FutureContains(V value) {
+            this.value = value;
+        }
+
+        @Override
+        public boolean matches(ListenableFuture<V> argument) {
+            return Futures.getUnchecked(argument).equals(value);
+        }
     }
 }

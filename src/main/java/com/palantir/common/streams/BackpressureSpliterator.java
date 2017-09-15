@@ -15,22 +15,24 @@
  */
 package com.palantir.common.streams;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Spliterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-class BackpressureSpliterator<U> implements Spliterator<U> {
+class BackpressureSpliterator<U> implements Spliterator<ListenableFuture<U>> {
     private final int maxParallelism;
-    private final BlockingQueue<CompletableFuture<U>> completed;
-    private final Spliterator<CompletableFuture<U>> notStarted;
+    private final BlockingQueue<ListenableFuture<U>> completed;
+    private final Spliterator<ListenableFuture<U>> notStarted;
 
     private int inProgress = 0;
 
-    BackpressureSpliterator(Spliterator<CompletableFuture<U>> futures, int maxParallelism) {
+    BackpressureSpliterator(Spliterator<ListenableFuture<U>> futures, int maxParallelism) {
         checkArgument(maxParallelism > 0,
                 "maxParallelism must be at least 1 (got %s)", new Object[] {maxParallelism});
         this.maxParallelism = maxParallelism;
@@ -39,14 +41,14 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
     }
 
     @Override
-    public boolean tryAdvance(Consumer<? super U> action) {
+    public boolean tryAdvance(Consumer<? super ListenableFuture<U>> action) {
         startNewWorkIfNecessary();
         if (inProgress == 0) {
             return false;
         }
 
         try {
-            U element = completed.take().join();
+            ListenableFuture<U> element = completed.take();
             inProgress--;
             action.accept(element);
             return true;
@@ -57,7 +59,7 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
     }
 
     @Override
-    public Spliterator<U> trySplit() {
+    public Spliterator<ListenableFuture<U>> trySplit() {
         return null;
     }
 
@@ -65,7 +67,7 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
         while (inProgress < maxParallelism) {
             boolean maybeRemainingElements = notStarted.tryAdvance(nextInput -> {
                 inProgress++;
-                nextInput.whenComplete((res, err) -> completed.add(nextInput));
+                nextInput.addListener(() -> completed.add(nextInput), MoreExecutors.directExecutor());
             });
             if (!maybeRemainingElements) {
                 return;
