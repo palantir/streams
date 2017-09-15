@@ -38,6 +38,8 @@ dependencies {
   compileOnly 'com.google.guava:guava:21.0'
   runtime 'com.google.guava:guava:18.0'
   testCompile 'junit:junit:4.12'
+  testCompile 'org.assertj:assertj-core:3.5.2'
+  testCompile 'org.mockito:mockito-core:2.10.0'
   testCompile 'com.google.truth:truth:0.28'
 }
 

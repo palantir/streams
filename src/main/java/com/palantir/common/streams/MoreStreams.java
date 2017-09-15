@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
+ * Copyright 2017 Palantir Technologies, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,15 @@
  */
 package com.palantir.common.streams;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -28,6 +33,28 @@ import java.util.stream.StreamSupport;
 public class MoreStreams {
 
     private static final boolean NOT_PARALLEL = false;
+
+    /**
+     * Given a {@code Stream<ListenableFuture<U>>}, this function will return a blocking stream of the completed
+     * futures in completion order, looking at most {@code maxParallelism} futures ahead in the stream.
+     */
+    public static <U> Stream<ListenableFuture<U>> inCompletionOrder(
+            Stream<ListenableFuture<U>> futures, int maxParallelism) {
+        return StreamSupport.stream(
+                new InCompletionOrderSpliterator<>(futures.spliterator(), maxParallelism), NOT_PARALLEL);
+    }
+
+    /**
+     * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
+     * function and an executor to run it on.
+     */
+    public static <U, V> Stream<V> inCompletionOrder(
+            Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
+        return inCompletionOrder(
+                arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
+                maxParallelism)
+                .map(Futures::getUnchecked);
+    }
 
     /**
      * Returns a stream of the values returned by {@code iterable}.
