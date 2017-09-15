@@ -22,21 +22,21 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 class BackpressureSpliterator<U> implements Spliterator<U> {
-    private final int desiredParallelism;
+    private final int maxParallelism;
     private final BlockingQueue<CompletableFuture<U>> completed;
     private final Spliterator<CompletableFuture<U>> notStarted;
 
     private int inProgress = 0;
 
     private BackpressureSpliterator(
-            int desiredParallelism,
+            int maxParallelism,
             Spliterator<CompletableFuture<U>> arguments) {
-        checkArgument(desiredParallelism > 0, "desiredParallelism %s > 0", new Object[] { desiredParallelism });
-        this.desiredParallelism = desiredParallelism;
-        this.completed = new ArrayBlockingQueue<>(desiredParallelism);
+        checkArgument(maxParallelism > 0,
+                "maxParallelism must be at least 1 (got %s)", new Object[] {maxParallelism});
+        this.maxParallelism = maxParallelism;
+        this.completed = new ArrayBlockingQueue<>(maxParallelism);
         this.notStarted = arguments;
     }
 
@@ -64,7 +64,7 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
     }
 
     private void startNewWorkIfNecessary() {
-        while (inProgress < desiredParallelism) {
+        while (inProgress < maxParallelism) {
             boolean maybeRemainingElements = notStarted.tryAdvance(nextInput -> {
                 inProgress++;
                 nextInput.whenComplete((res, err) -> completed.add(nextInput));
@@ -77,20 +77,11 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
 
     @Override
     public long estimateSize() {
-        long estimate = completed.size() + inProgress + notStarted.estimateSize();
+        long estimate = inProgress + notStarted.estimateSize();
         if (estimate < 0L) {
             return Long.MAX_VALUE;
         }
         return estimate;
-    }
-
-    @Override
-    public long getExactSizeIfKnown() {
-        long delegateResult = notStarted.getExactSizeIfKnown();
-        if (delegateResult == -1L) {
-            return -1L;
-        }
-        return completed.size() + inProgress + delegateResult;
     }
 
     @Override
