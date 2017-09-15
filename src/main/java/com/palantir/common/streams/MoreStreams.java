@@ -48,7 +48,7 @@ public class MoreStreams {
 
     /**
      * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
-     * {@link Stream<U>} of elements and a mapping function to {@link CompletableFuture} objects.
+     * {@link Stream} of elements and a mapping function to {@link CompletableFuture} objects.
      */
     public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, Function<U, CompletableFuture<V>> mappingFunction, int maxParallelism) {
