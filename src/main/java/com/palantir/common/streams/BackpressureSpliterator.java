@@ -86,7 +86,7 @@ class BackpressureSpliterator<U> implements Spliterator<U> {
 
     @Override
     public int characteristics() {
-        return (Spliterator.SIZED | Spliterator.SUBSIZED) & notStarted.characteristics();
+        return Spliterator.SIZED & notStarted.characteristics();
     }
 
     static <U> Spliterator<U> create(int desiredParallelism, Spliterator<CompletableFuture<U>> arguments) {
