@@ -40,9 +40,9 @@ public class MoreStreams {
      * futures in completion order, looking at most {@code maxParallelism} futures ahead in the stream.
      */
     public static <U> Stream<ListenableFuture<U>> inCompletionOrder(
-            Stream<ListenableFuture<U>> arguments, int maxParallelism) {
+            Stream<ListenableFuture<U>> futures, int maxParallelism) {
         return StreamSupport.stream(
-                new InCompletionOrderSpliterator<>(arguments.spliterator(), maxParallelism), NOT_PARALLEL);
+                new InCompletionOrderSpliterator<>(futures.spliterator(), maxParallelism), NOT_PARALLEL);
     }
 
     /**
@@ -93,7 +93,6 @@ public class MoreStreams {
     public static <T> Stream<T> stream(Iterator<T> iterator) {
         return StreamSupport.stream(spliteratorUnknownSize(iterator, 0), NOT_PARALLEL);
     }
-
 
     private MoreStreams() {}
 }
