@@ -1,12 +1,10 @@
 package com.palantir.common.streams;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.Spliterator;
-import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -21,7 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public final class BackpressureSpliteratorTests {
+public final class InCompletionOrderSpliteratorTests {
     private final SettableFuture<String> future = SettableFuture.create();
     private final SettableFuture<String> otherFuture = SettableFuture.create();
 
@@ -45,14 +43,14 @@ public final class BackpressureSpliteratorTests {
     @Test
     public void returnsFalseWhenAllFuturesCompleted() {
         Spliterator<ListenableFuture<String>> spliterator =
-                new BackpressureSpliterator<>(Stream.<ListenableFuture<String>>empty().spliterator(), 1);
+                new InCompletionOrderSpliterator<>(Stream.<ListenableFuture<String>>empty().spliterator(), 1);
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
         verifyZeroInteractions(consumer);
     }
 
     @Test
     public void onlyRunsUpToDesiredConcurrencyTasksSimultaneously() {
-        Spliterator<ListenableFuture<String>> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 1);
+        Spliterator<ListenableFuture<String>> spliterator = new InCompletionOrderSpliterator<>(sourceSpliterator, 1);
 
         String firstData = "firstData";
         future.set(firstData);
@@ -72,7 +70,7 @@ public final class BackpressureSpliteratorTests {
     @Test
     public void runsDesiredConcurrencyTasksSimultaneously() {
         future.set("some string");
-        new BackpressureSpliterator<>(sourceSpliterator, 2).tryAdvance(consumer);
+        new InCompletionOrderSpliterator<>(sourceSpliterator, 2).tryAdvance(consumer);
 
         verify(sourceSpliterator, times(2)).tryAdvance(any());
     }
@@ -80,7 +78,7 @@ public final class BackpressureSpliteratorTests {
     @Test
     public void doesNotStartNextTaskUntilDoneWithLastValue() {
         future.set("some string");
-        Spliterator<ListenableFuture<String>> spliterator = new BackpressureSpliterator<>(sourceSpliterator, 1);
+        Spliterator<ListenableFuture<String>> spliterator = new InCompletionOrderSpliterator<>(sourceSpliterator, 1);
 
         future.set("data");
         spliterator.tryAdvance(consumer);
@@ -95,7 +93,7 @@ public final class BackpressureSpliteratorTests {
         ListenableFuture<String> someFuture = Futures.immediateFuture(data);
 
         Spliterator<ListenableFuture<String>> spliterator =
-                new BackpressureSpliterator<>(Stream.of(someFuture).spliterator(), 1);
+                new InCompletionOrderSpliterator<>(Stream.of(someFuture).spliterator(), 1);
 
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
         verify(consumer).accept(argThat(new FutureContains<>(data)));
@@ -106,7 +104,7 @@ public final class BackpressureSpliteratorTests {
     public void testEstimateSize_hasSize() {
         Spliterator<ListenableFuture<String>> futures =
                 Stream.<ListenableFuture<String>>of(future, otherFuture).spliterator();
-        Spliterator<ListenableFuture<String>> spliterator = new BackpressureSpliterator<>(futures, 1);
+        Spliterator<ListenableFuture<String>> spliterator = new InCompletionOrderSpliterator<>(futures, 1);
         assertThat(spliterator.estimateSize()).isEqualTo(2);
         future.set("data");
         spliterator.tryAdvance(consumer);
@@ -119,7 +117,7 @@ public final class BackpressureSpliteratorTests {
     @Test
     public void testEstimateSize_unsized() {
         when(sourceSpliterator.estimateSize()).thenReturn(Long.MAX_VALUE);
-        assertThat(new BackpressureSpliterator<>(sourceSpliterator, 2).estimateSize())
+        assertThat(new InCompletionOrderSpliterator<>(sourceSpliterator, 2).estimateSize())
                 .isEqualTo(Long.MAX_VALUE);
     }
 

@@ -16,7 +16,6 @@
 package com.palantir.common.streams;
 
 import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -24,7 +23,6 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -44,7 +42,7 @@ public class MoreStreams {
     public static <U> Stream<ListenableFuture<U>> inCompletionOrder(
             Stream<ListenableFuture<U>> arguments, int maxParallelism) {
         return StreamSupport.stream(
-                new BackpressureSpliterator<>(arguments.spliterator(), maxParallelism), NOT_PARALLEL);
+                new InCompletionOrderSpliterator<>(arguments.spliterator(), maxParallelism), NOT_PARALLEL);
     }
 
     /**

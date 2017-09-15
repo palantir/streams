@@ -25,14 +25,14 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
-class BackpressureSpliterator<U> implements Spliterator<ListenableFuture<U>> {
+class InCompletionOrderSpliterator<U> implements Spliterator<ListenableFuture<U>> {
     private final int maxParallelism;
     private final BlockingQueue<ListenableFuture<U>> completed;
     private final Spliterator<ListenableFuture<U>> notStarted;
 
     private int inProgress = 0;
 
-    BackpressureSpliterator(Spliterator<ListenableFuture<U>> futures, int maxParallelism) {
+    InCompletionOrderSpliterator(Spliterator<ListenableFuture<U>> futures, int maxParallelism) {
         checkArgument(maxParallelism > 0,
                 "maxParallelism must be at least 1 (got %s)", new Object[] {maxParallelism});
         this.maxParallelism = maxParallelism;
