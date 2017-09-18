@@ -17,6 +17,8 @@ package com.palantir.common.streams;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
+import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
 
 import static java.util.Spliterators.spliteratorUnknownSize;
 
@@ -35,13 +37,13 @@ public class MoreStreams {
     private static final boolean NOT_PARALLEL = false;
 
     /**
-     * Given a {@code Stream<ListenableFuture<U>>}, this function will return a blocking stream of the completed
+     * Given a stream of listenable futures, this function will return a blocking stream of the completed
      * futures in completion order, looking at most {@code maxParallelism} futures ahead in the stream.
      */
-    public static <U> Stream<ListenableFuture<U>> inCompletionOrder(
-            Stream<ListenableFuture<U>> futures, int maxParallelism) {
-        return StreamSupport.stream(
-                new InCompletionOrderSpliterator<>(futures.spliterator(), maxParallelism), NOT_PARALLEL);
+    public static <T, F extends ListenableFuture<T>> Stream<F> inCompletionOrder(
+            Stream<F> futures, int maxParallelism) {
+        return StreamSupport.stream(new BufferingSpliterator<>(
+                InCompletionOrder.INSTANCE, futures.spliterator(), maxParallelism), NOT_PARALLEL);
     }
 
     /**
@@ -51,6 +53,30 @@ public class MoreStreams {
     public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
         return inCompletionOrder(
+                arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
+                maxParallelism)
+                .map(Futures::getUnchecked);
+    }
+
+    /**
+     * This function will return a blocking stream that waits for each future to complete before returning it,
+     * but which looks ahead {@code maxParallelism} futures to ensure a fixed parallelism rate.
+     */
+    public static <T, F extends ListenableFuture<T>> Stream<F> blockingStreamWithParallelism(
+            Stream<F> futures, int maxParallelism) {
+        return StreamSupport.stream(new BufferingSpliterator<>(
+                InSourceOrder.INSTANCE, futures.spliterator(), maxParallelism), NOT_PARALLEL)
+                .map(MoreFutures::blockUntilCompletion);
+    }
+
+
+    /**
+     * A convenient variant of {@link #blockingStreamWithParallelism(Stream, int)} in which the user passes in a
+     * function and an executor to run it on.
+     */
+    public static <U, V> Stream<V> blockingStreamWithParallelism(
+            Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
+        return blockingStreamWithParallelism(
                 arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
                 maxParallelism)
                 .map(Futures::getUnchecked);

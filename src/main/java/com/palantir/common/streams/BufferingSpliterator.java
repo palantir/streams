@@ -25,14 +25,17 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
-class InCompletionOrderSpliterator<U> implements Spliterator<ListenableFuture<U>> {
+class BufferingSpliterator<T, F extends ListenableFuture<T>> implements Spliterator<F> {
     private final int maxParallelism;
-    private final BlockingQueue<ListenableFuture<U>> completed;
-    private final Spliterator<ListenableFuture<U>> notStarted;
+    private final BlockingQueue<F> completed;
+    private final Spliterator<F> notStarted;
+    private final CompletionStrategy  completionStrategy;
 
     private int inProgress = 0;
 
-    InCompletionOrderSpliterator(Spliterator<ListenableFuture<U>> futures, int maxParallelism) {
+    BufferingSpliterator(
+            CompletionStrategy completionStrategy, Spliterator<F> futures, int maxParallelism) {
+        this.completionStrategy = completionStrategy;
         checkArgument(maxParallelism > 0,
                 "maxParallelism must be at least 1 (got %s)", new Object[] {maxParallelism});
         this.maxParallelism = maxParallelism;
@@ -41,14 +44,14 @@ class InCompletionOrderSpliterator<U> implements Spliterator<ListenableFuture<U>
     }
 
     @Override
-    public boolean tryAdvance(Consumer<? super ListenableFuture<U>> action) {
+    public boolean tryAdvance(Consumer<? super F> action) {
         startNewWorkIfNecessary();
         if (inProgress == 0) {
             return false;
         }
 
         try {
-            ListenableFuture<U> element = completed.take();
+            F element = completed.take();
             inProgress--;
             action.accept(element);
             return true;
@@ -59,7 +62,7 @@ class InCompletionOrderSpliterator<U> implements Spliterator<ListenableFuture<U>
     }
 
     @Override
-    public Spliterator<ListenableFuture<U>> trySplit() {
+    public Spliterator<F> trySplit() {
         return null;
     }
 
@@ -67,7 +70,7 @@ class InCompletionOrderSpliterator<U> implements Spliterator<ListenableFuture<U>
         while (inProgress < maxParallelism) {
             boolean maybeRemainingElements = notStarted.tryAdvance(nextInput -> {
                 inProgress++;
-                nextInput.addListener(() -> completed.add(nextInput), MoreExecutors.directExecutor());
+                completionStrategy.registerCompletion(nextInput, completed::add);
             });
             if (!maybeRemainingElements) {
                 return;
@@ -87,5 +90,28 @@ class InCompletionOrderSpliterator<U> implements Spliterator<ListenableFuture<U>
     @Override
     public int characteristics() {
         return Spliterator.SIZED & notStarted.characteristics();
+    }
+
+    @FunctionalInterface
+    interface CompletionStrategy {
+        <T, F extends ListenableFuture<T>> void registerCompletion(F future, Consumer<F> resultConsumer);
+    }
+
+    enum InCompletionOrder implements CompletionStrategy {
+        INSTANCE;
+
+        @Override
+        public <T, F extends ListenableFuture<T>> void registerCompletion(F future, Consumer<F> resultConsumer) {
+            future.addListener(() -> resultConsumer.accept(future), MoreExecutors.directExecutor());
+        }
+    }
+
+    enum InSourceOrder implements CompletionStrategy {
+        INSTANCE;
+
+        @Override
+        public <T, F extends ListenableFuture<T>> void registerCompletion(F future, Consumer<F> resultConsumer) {
+            resultConsumer.accept(future);
+        }
     }
 }
