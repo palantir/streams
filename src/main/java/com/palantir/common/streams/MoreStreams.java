@@ -37,7 +37,7 @@ public class MoreStreams {
     private static final boolean NOT_PARALLEL = false;
 
     /**
-     * Given a {@code Stream<ListenableFuture<U>>}, this function will return a blocking stream of the completed
+     * Given a stream of listenable futures, this function will return a blocking stream of the completed
      * futures in completion order, looking at most {@code maxParallelism} futures ahead in the stream.
      */
     public static <T, F extends ListenableFuture<T>> Stream<F> inCompletionOrder(
