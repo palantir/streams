@@ -54,25 +54,32 @@ public class MoreFuturesTests {
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
-            CountDownLatch latch = new CountDownLatch(1);
+            CyclicBarrier barrier = new CyclicBarrier(2);
             Future<?> success = executorService.submit(() -> {
                 assertThat(future.isDone()).isFalse();
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                await(barrier);
                 MoreFutures.blockOnCompletion(future);
                 assertThat(future.isDone()).isTrue();
             });
 
-            latch.countDown();
+            await(barrier);
             future.complete(RESULT);
 
             success.get();
         } finally {
             executorService.shutdown();
             executorService.awaitTermination(1, TimeUnit.SECONDS);
+        }
+    }
+
+    private static void await(CyclicBarrier barrier) {
+        try {
+            barrier.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (BrokenBarrierException e) {
+            throw new RuntimeException(e);
         }
     }
 }

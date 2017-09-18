@@ -24,10 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Spliterator;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
@@ -109,19 +106,23 @@ public class MoreStreamsTests {
     }
 
     private UnaryOperator<Integer> reorder() {
-        CountDownLatch latch = new CountDownLatch(1);
+        CyclicBarrier barrier = new CyclicBarrier(2);
         return input -> {
-            if (input == 0) {
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                }
-            } else if (input == 2) {
-                latch.countDown();
+            if (input == 0 || input == 2) {
+                await(barrier);
             }
             return input;
         };
+    }
+
+    private static void await(CyclicBarrier barrier) {
+        try {
+            barrier.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (BrokenBarrierException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
