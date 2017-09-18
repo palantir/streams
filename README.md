@@ -57,8 +57,8 @@ executor, calling
     MoreStreams.inCompletionOrder(foos.stream(), service::getBar, executor, maxParallelism).collect(toList());
 
 The difference between `inCompletionOrder` and `blockingStreamWithParallelism` is that the `blockStreamWithParallelism`
-methods keep the futures in the order they were provided, whilst the `inCompletionOrder` methods reorder the stream
-into completion order.
+methods keep the futures in the order they were provided, whilst the `inCompletionOrder` methods return futures in
+the order in which they complete.
 
 [BiFunction]: https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html
 [Iterable]: https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html
