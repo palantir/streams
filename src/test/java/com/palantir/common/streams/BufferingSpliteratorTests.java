@@ -23,22 +23,24 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.palantir.common.streams.BufferingSpliterator.CompletionStrategy;
+import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
+import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(Parameterized.class)
 public final class BufferingSpliteratorTests {
-    // None of the tests in this class should be affected by the choice of completion strategy.
-    private static final CompletionStrategy completionStrategy = BufferingSpliterator.InSourceOrder.INSTANCE;
-
     private final SettableFuture<String> future = SettableFuture.create();
     private final SettableFuture<String> otherFuture = SettableFuture.create();
 
@@ -46,8 +48,22 @@ public final class BufferingSpliteratorTests {
 
     @Mock private Spliterator<ListenableFuture<String>> sourceSpliterator;
 
+    private final CompletionStrategy completionStrategy;
+
+    @Parameters(name = "strategy: {0}")
+    public static Iterable<Object[]> parameters() {
+        return ImmutableList.of(
+                new Object[] {"InSourceOrder", InSourceOrder.INSTANCE},
+                new Object[] {"InCompletionOrder", InCompletionOrder.INSTANCE});
+    }
+
+    public BufferingSpliteratorTests(String name, CompletionStrategy completionStrategy) {
+        this.completionStrategy = completionStrategy;
+    }
+
     @Before
     public void before() {
+        MockitoAnnotations.initMocks(this);
         when(sourceSpliterator.tryAdvance(any())).thenAnswer(x -> {
             Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
             consumer.accept(future);
