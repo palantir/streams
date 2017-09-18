@@ -31,8 +31,8 @@ Each map function also accepts a [BiFunction], making it easy to modify keys bas
 
 ## MoreStreams
 
-Utility methods for streams. Currently supported is `inCompletionOrder`. It is tricky to handle streams of futures.
-Running
+Utility methods for streams. Currently supported are `inCompletionOrder` and `inSourceOrder`. It is tricky to
+handle streams of futures. Running
 
     foos.stream().map(executorService::submit).map(Futures::getUnchecked).collect(toList());
 
@@ -55,6 +55,10 @@ In some cases, it may not be beneficial to push down the async computation. Here
 executor, calling
 
     MoreStreams.inCompletionOrder(foos.stream(), service::getBar, executor, maxParallelism).collect(toList());
+
+The difference between `inCompletionOrder` and `inSourceOrder` is that the `inSourceOrder` methods keep the
+futures in the order they were provided, whilst the `inCompletionOrder` methods reorder the stream
+into completion order.
 
 [BiFunction]: https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html
 [Iterable]: https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html
