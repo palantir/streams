@@ -62,7 +62,7 @@ public class MoreStreams {
      * Given a {@code Stream<ListenableFuture<U>>}, this function will return a blocking stream of the completed
      * futures in the same order as the source, looking at most {@code maxParallelism} futures ahead in the stream.
      */
-    public static <T extends ListenableFuture<U>, U> Stream<T> inSourceOrder(
+    public static <T extends ListenableFuture<U>, U> Stream<T> withParallelLookahead(
             Stream<T> futures, int maxParallelism) {
         return StreamSupport.stream(new BufferingSpliterator<>(
                 InSourceOrder.INSTANCE, futures.spliterator(), maxParallelism), NOT_PARALLEL)
@@ -71,12 +71,12 @@ public class MoreStreams {
 
 
     /**
-     * A convenient variant of {@link #inSourceOrder(Stream, int)} in which the user passes in a
+     * A convenient variant of {@link #withParallelLookahead(Stream, int)} in which the user passes in a
      * function and an executor to run it on.
      */
-    public static <U, V> Stream<V> inSourceOrder(
+    public static <U, V> Stream<V> withParallelLookahead(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
-        return inSourceOrder(
+        return withParallelLookahead(
                 arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
                 maxParallelism)
                 .map(Futures::getUnchecked);

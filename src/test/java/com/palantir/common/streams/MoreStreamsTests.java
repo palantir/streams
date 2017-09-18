@@ -75,8 +75,8 @@ public class MoreStreamsTests {
     }
 
     @Test
-    public void testInSourceOrder_future() {
-        Stream<SettableFuture<String>> completedFutureStream = MoreStreams.inSourceOrder(stream, 3);
+    public void testWithParallelLookahead_future() {
+        Stream<SettableFuture<String>> completedFutureStream = MoreStreams.withParallelLookahead(stream, 3);
         assertThat(completedFutureStream).containsExactly(firstInSource, secondInSource);
     }
 
@@ -96,11 +96,11 @@ public class MoreStreamsTests {
     }
 
     @Test
-    public void testInSourceOrder_transformWithExecutor() throws InterruptedException {
+    public void testWithParallelLookahead_transformWithExecutor() throws InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         try {
             // due to size of thread pool, 1 must finish before 0, but 0 will return first.
-            assertThat(MoreStreams.inSourceOrder(
+            assertThat(MoreStreams.withParallelLookahead(
                     IntStream.range(0, 3).boxed(), reorder(), executorService, 3).collect(toList()))
                     .containsExactly(0, 1, 2);
         } finally {
