@@ -17,6 +17,8 @@ package com.palantir.common.streams;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
+import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
 
 import static java.util.Spliterators.spliteratorUnknownSize;
 
@@ -38,10 +40,10 @@ public class MoreStreams {
      * Given a {@code Stream<ListenableFuture<U>>}, this function will return a blocking stream of the completed
      * futures in completion order, looking at most {@code maxParallelism} futures ahead in the stream.
      */
-    public static <U> Stream<ListenableFuture<U>> inCompletionOrder(
-            Stream<ListenableFuture<U>> futures, int maxParallelism) {
-        return StreamSupport.stream(
-                new InCompletionOrderSpliterator<>(futures.spliterator(), maxParallelism), NOT_PARALLEL);
+    public static <T extends ListenableFuture<U>, U> Stream<T> inCompletionOrder(
+            Stream<T> futures, int maxParallelism) {
+        return StreamSupport.stream(new BufferingSpliterator<>(
+                InCompletionOrder.INSTANCE, futures.spliterator(), maxParallelism), NOT_PARALLEL);
     }
 
     /**
@@ -51,6 +53,30 @@ public class MoreStreams {
     public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
         return inCompletionOrder(
+                arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
+                maxParallelism)
+                .map(Futures::getUnchecked);
+    }
+
+    /**
+     * Given a {@code Stream<ListenableFuture<U>>}, this function will return a blocking stream of the completed
+     * futures in the same order as the source, looking at most {@code maxParallelism} futures ahead in the stream.
+     */
+    public static <T extends ListenableFuture<U>, U> Stream<T> inSourceOrder(
+            Stream<T> futures, int maxParallelism) {
+        return StreamSupport.stream(new BufferingSpliterator<>(
+                InSourceOrder.INSTANCE, futures.spliterator(), maxParallelism), NOT_PARALLEL)
+                .map(MoreFutures::blockOnCompletion);
+    }
+
+
+    /**
+     * A convenient variant of {@link #inSourceOrder(Stream, int)} in which the user passes in a
+     * function and an executor to run it on.
+     */
+    public static <U, V> Stream<V> inSourceOrder(
+            Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
+        return inSourceOrder(
                 arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
                 maxParallelism)
                 .map(Futures::getUnchecked);

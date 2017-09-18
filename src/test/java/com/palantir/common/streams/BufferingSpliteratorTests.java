@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.palantir.common.streams.BufferingSpliterator.CompletionStrategy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,7 +35,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public final class InCompletionOrderSpliteratorTests {
+public final class BufferingSpliteratorTests {
+    // None of the tests in this class should be affected by the choice of completion strategy.
+    private static final CompletionStrategy completionStrategy = BufferingSpliterator.InSourceOrder.INSTANCE;
+
     private final SettableFuture<String> future = SettableFuture.create();
     private final SettableFuture<String> otherFuture = SettableFuture.create();
 
@@ -57,15 +61,16 @@ public final class InCompletionOrderSpliteratorTests {
 
     @Test
     public void returnsFalseWhenAllFuturesCompleted() {
-        Spliterator<ListenableFuture<String>> spliterator =
-                new InCompletionOrderSpliterator<>(Stream.<ListenableFuture<String>>empty().spliterator(), 1);
+        Spliterator<ListenableFuture<String>> spliterator = new BufferingSpliterator<>(
+                completionStrategy, Stream.<ListenableFuture<String>>empty().spliterator(), 1);
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
         verifyZeroInteractions(consumer);
     }
 
     @Test
     public void onlyRunsUpToDesiredConcurrencyTasksSimultaneously() {
-        Spliterator<ListenableFuture<String>> spliterator = new InCompletionOrderSpliterator<>(sourceSpliterator, 1);
+        Spliterator<ListenableFuture<String>> spliterator =
+                new BufferingSpliterator<>(completionStrategy, sourceSpliterator, 1);
 
         String firstData = "firstData";
         future.set(firstData);
@@ -85,7 +90,7 @@ public final class InCompletionOrderSpliteratorTests {
     @Test
     public void runsDesiredConcurrencyTasksSimultaneously() {
         future.set("some string");
-        new InCompletionOrderSpliterator<>(sourceSpliterator, 2).tryAdvance(consumer);
+        new BufferingSpliterator<>(completionStrategy, sourceSpliterator, 2).tryAdvance(consumer);
 
         verify(sourceSpliterator, times(2)).tryAdvance(any());
     }
@@ -93,7 +98,8 @@ public final class InCompletionOrderSpliteratorTests {
     @Test
     public void doesNotStartNextTaskUntilDoneWithLastValue() {
         future.set("some string");
-        Spliterator<ListenableFuture<String>> spliterator = new InCompletionOrderSpliterator<>(sourceSpliterator, 1);
+        Spliterator<ListenableFuture<String>> spliterator =
+                new BufferingSpliterator<>(completionStrategy, sourceSpliterator, 1);
 
         future.set("data");
         spliterator.tryAdvance(consumer);
@@ -108,7 +114,7 @@ public final class InCompletionOrderSpliteratorTests {
         ListenableFuture<String> someFuture = Futures.immediateFuture(data);
 
         Spliterator<ListenableFuture<String>> spliterator =
-                new InCompletionOrderSpliterator<>(Stream.of(someFuture).spliterator(), 1);
+                new BufferingSpliterator<>(completionStrategy, Stream.of(someFuture).spliterator(), 1);
 
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
         verify(consumer).accept(argThat(new FutureContains<>(data)));
@@ -119,7 +125,8 @@ public final class InCompletionOrderSpliteratorTests {
     public void testEstimateSize_hasSize() {
         Spliterator<ListenableFuture<String>> futures =
                 Stream.<ListenableFuture<String>>of(future, otherFuture).spliterator();
-        Spliterator<ListenableFuture<String>> spliterator = new InCompletionOrderSpliterator<>(futures, 1);
+        Spliterator<ListenableFuture<String>> spliterator =
+                new BufferingSpliterator<>(completionStrategy, futures, 1);
         assertThat(spliterator.estimateSize()).isEqualTo(2);
         future.set("data");
         spliterator.tryAdvance(consumer);
@@ -132,7 +139,8 @@ public final class InCompletionOrderSpliteratorTests {
     @Test
     public void testEstimateSize_unsized() {
         when(sourceSpliterator.estimateSize()).thenReturn(Long.MAX_VALUE);
-        Spliterator<ListenableFuture<String>> spliterator = new InCompletionOrderSpliterator<>(sourceSpliterator, 1);
+        Spliterator<ListenableFuture<String>> spliterator =
+                new BufferingSpliterator<>(completionStrategy, sourceSpliterator, 1);
         future.set("data");
         spliterator.tryAdvance(consumer);
         assertThat(spliterator.estimateSize()).isEqualTo(Long.MAX_VALUE);
