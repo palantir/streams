@@ -41,8 +41,6 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MoreStreamsTests {
-    private static final String DATA = "data";
-
     private SettableFuture<String> firstInSource = SettableFuture.create();
     private SettableFuture<String> secondInSource = SettableFuture.create();
 

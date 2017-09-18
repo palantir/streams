@@ -1,3 +1,18 @@
+/*
+ * Copyright 2017 Palantir Technologies, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.palantir.common.streams;
 
 import com.google.common.util.concurrent.Futures;
@@ -35,15 +50,18 @@ public class MoreFuturesTests {
 
     @Test
     public void testBlockOnCompletion_blocking() throws InterruptedException, ExecutionException {
-        CountDownLatch latch = new CountDownLatch(2);
         CompletableFuture<String> future = new CompletableFuture<>();
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-
         try {
+            CountDownLatch latch = new CountDownLatch(1);
             Future<?> success = executorService.submit(() -> {
                 assertThat(future.isDone()).isFalse();
-                latch.countDown();
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 MoreFutures.blockOnCompletion(future);
                 assertThat(future.isDone()).isTrue();
             });
