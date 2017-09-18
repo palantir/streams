@@ -37,21 +37,21 @@ public class MoreFuturesTests {
     @Test
     public void testBlockOnCompletion_successful() {
         Future<String> future = Futures.immediateFailedFuture(new RuntimeException());
-        MoreFutures.blockOnCompletion(future);
+        MoreFutures.blockUntilCompletion(future);
         assertThatExceptionOfType(ExecutionException.class).isThrownBy(future::get).withCause(exception);
     }
 
     @Test
     public void testBlockOnCompletion_failure() {
         Future<String> future = Futures.immediateFuture(RESULT);
-        MoreFutures.blockOnCompletion(future);
+        MoreFutures.blockUntilCompletion(future);
         assertThat(Futures.getUnchecked(future)).isEqualTo(RESULT);
     }
 
     @Test
     public void testBlockOnCompletion_cancelled() {
         Future<String> future = Futures.immediateCancelledFuture();
-        MoreFutures.blockOnCompletion(future);
+        MoreFutures.blockUntilCompletion(future);
         assertThat(future.isCancelled()).isTrue();
     }
 
@@ -65,7 +65,7 @@ public class MoreFuturesTests {
             Future<?> success = executorService.submit(() -> {
                 assertThat(future.isDone()).isFalse();
                 await(barrier);
-                MoreFutures.blockOnCompletion(future);
+                MoreFutures.blockUntilCompletion(future);
                 assertThat(future.isDone()).isTrue();
             });
 

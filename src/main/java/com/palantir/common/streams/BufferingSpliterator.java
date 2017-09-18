@@ -25,16 +25,16 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
-class BufferingSpliterator<T extends ListenableFuture<U>, U> implements Spliterator<T> {
+class BufferingSpliterator<T, F extends ListenableFuture<T>> implements Spliterator<F> {
     private final int maxParallelism;
-    private final BlockingQueue<T> completed;
-    private final Spliterator<T> notStarted;
+    private final BlockingQueue<F> completed;
+    private final Spliterator<F> notStarted;
     private final CompletionStrategy  completionStrategy;
 
     private int inProgress = 0;
 
     BufferingSpliterator(
-            CompletionStrategy completionStrategy, Spliterator<T> futures, int maxParallelism) {
+            CompletionStrategy completionStrategy, Spliterator<F> futures, int maxParallelism) {
         this.completionStrategy = completionStrategy;
         checkArgument(maxParallelism > 0,
                 "maxParallelism must be at least 1 (got %s)", new Object[] {maxParallelism});
@@ -44,14 +44,14 @@ class BufferingSpliterator<T extends ListenableFuture<U>, U> implements Splitera
     }
 
     @Override
-    public boolean tryAdvance(Consumer<? super T> action) {
+    public boolean tryAdvance(Consumer<? super F> action) {
         startNewWorkIfNecessary();
         if (inProgress == 0) {
             return false;
         }
 
         try {
-            T element = completed.take();
+            F element = completed.take();
             inProgress--;
             action.accept(element);
             return true;
@@ -62,7 +62,7 @@ class BufferingSpliterator<T extends ListenableFuture<U>, U> implements Splitera
     }
 
     @Override
-    public Spliterator<T> trySplit() {
+    public Spliterator<F> trySplit() {
         return null;
     }
 
@@ -94,14 +94,14 @@ class BufferingSpliterator<T extends ListenableFuture<U>, U> implements Splitera
 
     @FunctionalInterface
     interface CompletionStrategy {
-        <T extends ListenableFuture<U>, U> void registerCompletion(T future, Consumer<T> resultConsumer);
+        <T, F extends ListenableFuture<T>> void registerCompletion(F future, Consumer<F> resultConsumer);
     }
 
     enum InCompletionOrder implements CompletionStrategy {
         INSTANCE;
 
         @Override
-        public <T extends ListenableFuture<U>, U> void registerCompletion(T future, Consumer<T> resultConsumer) {
+        public <T, F extends ListenableFuture<T>> void registerCompletion(F future, Consumer<F> resultConsumer) {
             future.addListener(() -> resultConsumer.accept(future), MoreExecutors.directExecutor());
         }
     }
@@ -110,7 +110,7 @@ class BufferingSpliterator<T extends ListenableFuture<U>, U> implements Splitera
         INSTANCE;
 
         @Override
-        public <T extends ListenableFuture<U>, U> void registerCompletion(T future, Consumer<T> resultConsumer) {
+        public <T, F extends ListenableFuture<T>> void registerCompletion(F future, Consumer<F> resultConsumer) {
             resultConsumer.accept(future);
         }
     }

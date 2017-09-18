@@ -40,8 +40,8 @@ public class MoreStreams {
      * Given a {@code Stream<ListenableFuture<U>>}, this function will return a blocking stream of the completed
      * futures in completion order, looking at most {@code maxParallelism} futures ahead in the stream.
      */
-    public static <T extends ListenableFuture<U>, U> Stream<T> inCompletionOrder(
-            Stream<T> futures, int maxParallelism) {
+    public static <T, F extends ListenableFuture<T>> Stream<F> inCompletionOrder(
+            Stream<F> futures, int maxParallelism) {
         return StreamSupport.stream(new BufferingSpliterator<>(
                 InCompletionOrder.INSTANCE, futures.spliterator(), maxParallelism), NOT_PARALLEL);
     }
@@ -59,24 +59,24 @@ public class MoreStreams {
     }
 
     /**
-     * Given a {@code Stream<ListenableFuture<U>>}, this function will return a blocking stream of the completed
-     * futures in the same order as the source, looking at most {@code maxParallelism} futures ahead in the stream.
+     * This function will return a blocking stream that waits for each future to complete before returning it,
+     * but which looks ahead {@code maxParallelism} futures to ensure a fixed parallelism rate.
      */
-    public static <T extends ListenableFuture<U>, U> Stream<T> withParallelLookahead(
-            Stream<T> futures, int maxParallelism) {
+    public static <T, F extends ListenableFuture<T>> Stream<F> blockingStreamWithParallelism(
+            Stream<F> futures, int maxParallelism) {
         return StreamSupport.stream(new BufferingSpliterator<>(
                 InSourceOrder.INSTANCE, futures.spliterator(), maxParallelism), NOT_PARALLEL)
-                .map(MoreFutures::blockOnCompletion);
+                .map(MoreFutures::blockUntilCompletion);
     }
 
 
     /**
-     * A convenient variant of {@link #withParallelLookahead(Stream, int)} in which the user passes in a
+     * A convenient variant of {@link #blockingStreamWithParallelism(Stream, int)} in which the user passes in a
      * function and an executor to run it on.
      */
-    public static <U, V> Stream<V> withParallelLookahead(
+    public static <U, V> Stream<V> blockingStreamWithParallelism(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
-        return withParallelLookahead(
+        return blockingStreamWithParallelism(
                 arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
                 maxParallelism)
                 .map(Futures::getUnchecked);
