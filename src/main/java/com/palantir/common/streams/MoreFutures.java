@@ -27,7 +27,7 @@ class MoreFutures {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
-        } catch (ExecutionException | RuntimeException | Error ignored) {}
+        } catch (ExecutionException ignored) {}
 
         return future;
     }

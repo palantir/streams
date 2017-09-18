@@ -31,13 +31,15 @@ import com.palantir.common.streams.BufferingSpliterator.CompletionStrategy;
 import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
 import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @RunWith(Parameterized.class)
 public final class BufferingSpliteratorTests {
@@ -47,6 +49,8 @@ public final class BufferingSpliteratorTests {
     @Mock private Consumer<ListenableFuture<String>> consumer;
 
     @Mock private Spliterator<ListenableFuture<String>> sourceSpliterator;
+
+    @Rule public final MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private final CompletionStrategy completionStrategy;
 
@@ -63,7 +67,6 @@ public final class BufferingSpliteratorTests {
 
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
         when(sourceSpliterator.tryAdvance(any())).thenAnswer(x -> {
             Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
             consumer.accept(future);
