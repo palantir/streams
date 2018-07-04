@@ -57,7 +57,7 @@ public interface KeyedStream<K, V> {
     }
 
     /**
-     * Returns a keyed stream consisting of the entries of this stream whose values match
+     * Returns a keyed stream consisting of the entries of this stream whose keys match
      * the given predicate.
      */
     default KeyedStream<K, V> filterKeys(Predicate<? super K> predicate) {
