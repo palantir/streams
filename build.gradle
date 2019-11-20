@@ -34,9 +34,7 @@ group 'com.palantir.common'
 version System.env.CIRCLE_TAG ?: gitVersion()
 
 dependencies {
-  // Pull Guava 21 for JavaDocs, but we don't need it at runtime
-  compileOnly 'com.google.guava:guava:21.0'
-  runtime 'com.google.guava:guava:18.0'
+  compile 'com.google.guava:guava:21.0'
   testCompile 'junit:junit:4.12'
   testCompile 'org.assertj:assertj-core:3.5.2'
   testCompile 'org.mockito:mockito-core:2.10.0'

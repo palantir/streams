@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Multimap;
@@ -46,7 +47,12 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
 
     @Override
     public <M extends Multimap<K, V>> M collectToMultimap(Supplier<M> supplier) {
-        return entries.collect(supplier::get, KeyedStreamImpl::accumulate, KeyedStreamImpl::combine);
+        return entries.collect(supplier, KeyedStreamImpl::accumulate, KeyedStreamImpl::combine);
+    }
+
+    @Override
+    public <A, R> R collect(Collector<Entry<? extends K, ? extends V>, A, R> collector) {
+        return entries.collect(collector);
     }
 
     @Override

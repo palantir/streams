@@ -17,6 +17,11 @@ package com.palantir.common.streams;
 
 import static com.google.common.collect.Maps.immutableEntry;
 
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.Multimaps;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -29,6 +34,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.LinkedHashMultimap;
@@ -156,6 +162,18 @@ public interface KeyedStream<K, V> {
     }
 
     /**
+     * Accumulates the entries of this stream using the provided collector.
+     */
+    <A, R> R collect(Collector<Map.Entry<? extends K, ? extends V>, A, R> collector);
+
+    /**
+     * Accumulates the entries of this stream into a new {@code ImmutableMap}.
+     */
+    default ImmutableMap<K, V> collectToImmutableMap() {
+        return collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    /**
      * Accumulates the entries of this stream into a new map.
      *
      * <p>There are no guarantees on the type, mutability, serializability, or thread-safety of the
@@ -188,6 +206,20 @@ public interface KeyedStream<K, V> {
      * {@code Multimap} is created by the provided factory.
      */
     <M extends Multimap<K, V>> M collectToMultimap(Supplier<M> multimapFactory);
+
+    /**
+     * Accumulates the entries of this stream into a new {@code ImmutableMultimap}, in encounter order.
+     */
+    default ImmutableMultimap<K, V> collectToImmutableMultimap() {
+        return collect(ImmutableListMultimap.toImmutableListMultimap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    /**
+     * Accumulates the entries of this stream into a new {@code ImmutableSetMultimap}, in encounter order.
+     */
+    default ImmutableSetMultimap<K, V> collectToImmutableSetMultimap() {
+        return collect(ImmutableSetMultimap.toImmutableSetMultimap(Map.Entry::getKey, Map.Entry::getValue));
+    }
 
     /**
      * Returns a stream of the keys of each entry of this stream, dropping the associated values.

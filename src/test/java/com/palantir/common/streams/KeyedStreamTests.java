@@ -19,6 +19,9 @@ import static com.google.common.collect.Maps.immutableEntry;
 import static com.google.common.truth.Truth.assertThat;
 import static com.palantir.common.streams.KeyedStream.toKeyedStream;
 
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.MultimapBuilder;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableSet;
@@ -75,9 +79,29 @@ public class KeyedStreamTests {
     }
 
     @Test
+    public void test_collect_multiple_values_as_immutablemap() {
+        ImmutableMap<Integer, Integer> map = Stream.of(6, 8, 12).collect(toKeyedStream()).collectToImmutableMap();
+        assertThat(map).isEqualTo(ImmutableMap.of(6, 6, 8, 8, 12, 12));
+    }
+
+    @Test
     public void test_stream_multiple_values_as_multimap() {
         SetMultimap<Integer, Integer> map = KeyedStream.stream(ImmutableSetMultimap.of(1, 2, 3, 4)).collectToSetMultimap();
         assertThat(map).isEqualTo(ImmutableSetMultimap.of(3, 4, 1, 2));
+    }
+
+    @Test
+    public void test_collect_multiple_values_as_immutablemultimap() {
+        ImmutableMultimap<Integer, Integer> map = KeyedStream.stream(ImmutableListMultimap.of(1, 2, 1, 4, 1, 8))
+                .collectToImmutableMultimap();
+        assertThat(map).isEqualTo(ImmutableListMultimap.of(1, 2, 1, 4, 1, 8));
+    }
+
+    @Test
+    public void test_collect_multiple_values_as_immutablesetmultimap() {
+        ImmutableSetMultimap<Integer, Integer> map = KeyedStream.stream(ImmutableSetMultimap.of(1, 2, 1, 4))
+                .collectToImmutableSetMultimap();
+        assertThat(map).isEqualTo(ImmutableSetMultimap.of(1, 2, 1, 4));
     }
 
     @Test
