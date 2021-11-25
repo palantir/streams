@@ -19,6 +19,7 @@ import static com.google.common.collect.Maps.immutableEntry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -163,6 +164,13 @@ public interface KeyedStream<K, V> {
      */
     default Map<K, V> collectToMap() {
         return collectTo(LinkedHashMap::new);
+    }
+
+    /**
+     * Returns an unmodifiable view of {@link #collectToMap()}.
+     */
+    default Map<K, V> collectToUnmodifiableMap() {
+        return Collections.unmodifiableMap(collectToMap());
     }
 
     /**
