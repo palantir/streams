@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Palantir Technologies, Inc. All rights reserved.
+ * (c) Copyright 2017 Palantir Technologies Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,12 @@
  */
 package com.palantir.common.streams;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
-import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
-
 import static java.util.Spliterators.spliteratorUnknownSize;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
+import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -42,8 +41,9 @@ public class MoreStreams {
      */
     public static <T, F extends ListenableFuture<T>> Stream<F> inCompletionOrder(
             Stream<F> futures, int maxParallelism) {
-        return StreamSupport.stream(new BufferingSpliterator<>(
-                InCompletionOrder.INSTANCE, futures.spliterator(), maxParallelism), NOT_PARALLEL);
+        return StreamSupport.stream(
+                new BufferingSpliterator<>(InCompletionOrder.INSTANCE, futures.spliterator(), maxParallelism),
+                NOT_PARALLEL);
     }
 
     /**
@@ -53,8 +53,8 @@ public class MoreStreams {
     public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
         return inCompletionOrder(
-                arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
-                maxParallelism)
+                        arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
+                        maxParallelism)
                 .map(Futures::getUnchecked);
     }
 
@@ -64,11 +64,11 @@ public class MoreStreams {
      */
     public static <T, F extends ListenableFuture<T>> Stream<F> blockingStreamWithParallelism(
             Stream<F> futures, int maxParallelism) {
-        return StreamSupport.stream(new BufferingSpliterator<>(
-                InSourceOrder.INSTANCE, futures.spliterator(), maxParallelism), NOT_PARALLEL)
+        return StreamSupport.stream(
+                        new BufferingSpliterator<>(InSourceOrder.INSTANCE, futures.spliterator(), maxParallelism),
+                        NOT_PARALLEL)
                 .map(MoreFutures::blockUntilCompletion);
     }
-
 
     /**
      * A convenient variant of {@link #blockingStreamWithParallelism(Stream, int)} in which the user passes in a
@@ -77,8 +77,8 @@ public class MoreStreams {
     public static <U, V> Stream<V> blockingStreamWithParallelism(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
         return blockingStreamWithParallelism(
-                arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
-                maxParallelism)
+                        arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
+                        maxParallelism)
                 .map(Futures::getUnchecked);
     }
 

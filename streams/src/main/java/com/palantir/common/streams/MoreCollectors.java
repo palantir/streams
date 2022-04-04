@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
+ * (c) Copyright 2016 Palantir Technologies Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,15 @@
  */
 package com.palantir.common.streams;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 
 /**
  * Java 8 {@link Collector} for immutable collections.
@@ -69,8 +68,8 @@ public class MoreCollectors {
      * @deprecated Use {@link ImmutableMap#toImmutableMap}, available in Guava 21+
      */
     @Deprecated
-    public static <T, K, V> Collector<T, ?, Map<K, V>> toImmutableMap(Function<T, K> keyFunction,
-                                                                      Function<T, V> valueFunction) {
+    public static <T, K, V> Collector<T, ?, Map<K, V>> toImmutableMap(
+            Function<T, K> keyFunction, Function<T, V> valueFunction) {
         return Collector.of(
                 ImmutableMap::<K, V>builder,
                 (builder, value) -> builder.put(keyFunction.apply(value), valueFunction.apply(value)),
@@ -78,6 +77,5 @@ public class MoreCollectors {
                 ImmutableMap.Builder::build);
     }
 
-    private MoreCollectors() {
-    }
+    private MoreCollectors() {}
 }

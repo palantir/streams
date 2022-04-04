@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Palantir Technologies, Inc. All rights reserved.
+ * (c) Copyright 2017 Palantir Technologies Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  */
 package com.palantir.common.streams;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
-
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import java.util.Spliterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -29,15 +28,13 @@ class BufferingSpliterator<T, F extends ListenableFuture<T>> implements Splitera
     private final int maxParallelism;
     private final BlockingQueue<F> completed;
     private final Spliterator<F> notStarted;
-    private final CompletionStrategy  completionStrategy;
+    private final CompletionStrategy completionStrategy;
 
     private int inProgress = 0;
 
-    BufferingSpliterator(
-            CompletionStrategy completionStrategy, Spliterator<F> futures, int maxParallelism) {
+    BufferingSpliterator(CompletionStrategy completionStrategy, Spliterator<F> futures, int maxParallelism) {
         this.completionStrategy = completionStrategy;
-        checkArgument(maxParallelism > 0,
-                "maxParallelism must be at least 1 (got %s)", new Object[] {maxParallelism});
+        checkArgument(maxParallelism > 0, "maxParallelism must be at least 1 (got %s)", new Object[] {maxParallelism});
         this.maxParallelism = maxParallelism;
         this.completed = new ArrayBlockingQueue<>(maxParallelism);
         this.notStarted = futures;

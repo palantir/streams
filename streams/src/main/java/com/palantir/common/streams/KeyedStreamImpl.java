@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
+ * (c) Copyright 2016 Palantir Technologies Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@ package com.palantir.common.streams;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.collect.Multimap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import com.google.common.collect.Multimap;
 
 class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
 
@@ -52,15 +51,16 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
     @Override
     public <K2, V2> KeyedStream<K2, V2> mapEntries(
             BiFunction<? super K, ? super V, ? extends Entry<? extends K2, ? extends V2>> entryMapper) {
-        return new KeyedStreamImpl<K2, V2>(entries.<Map.Entry<? extends K2, ? extends V2>>map(entry ->
-                entryMapper.apply(entry.getKey(), entry.getValue())));
+        return new KeyedStreamImpl<K2, V2>(entries.<Map.Entry<? extends K2, ? extends V2>>map(
+                entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
     }
 
     @Override
     public <K2, V2> KeyedStream<K2, V2> flatMapEntries(
-            BiFunction<? super K, ? super V, ? extends Stream<? extends Entry<? extends K2, ? extends V2>>> entryMapper) {
-        return new KeyedStreamImpl<K2, V2>(entries.flatMap(entry ->
-                entryMapper.apply(entry.getKey(), entry.getValue())));
+            BiFunction<? super K, ? super V, ? extends Stream<? extends Entry<? extends K2, ? extends V2>>>
+                    entryMapper) {
+        return new KeyedStreamImpl<K2, V2>(
+                entries.flatMap(entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
     }
 
     @Override
@@ -69,7 +69,7 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
     }
 
     private static <K, V> void accumulate(Map<K, V> map, Map.Entry<? extends K, ? extends V> entry) {
-        checkState(!map.containsKey(entry.getKey()), "Duplicate key %s", new Object[] { entry.getKey() });
+        checkState(!map.containsKey(entry.getKey()), "Duplicate key %s", new Object[] {entry.getKey()});
         map.put(entry.getKey(), entry.getValue());
     }
 

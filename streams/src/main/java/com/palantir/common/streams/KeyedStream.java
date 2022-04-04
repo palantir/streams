@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
+ * (c) Copyright 2016 Palantir Technologies Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ package com.palantir.common.streams;
 
 import static com.google.common.collect.Maps.immutableEntry;
 
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -30,10 +33,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
-
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.SetMultimap;
 
 /**
  * A stream of values, each of which has an associated key that is preserved as the values are
@@ -122,7 +121,8 @@ public interface KeyedStream<K, V> {
      * contents of a mapped stream produced by applying the provided mapping function to that entry.
      */
     default <R> KeyedStream<K, R> flatMap(BiFunction<? super K, ? super V, ? extends Stream<? extends R>> entryMapper) {
-        return flatMapEntries((key, value) -> entryMapper.apply(key, value).map(newValue -> immutableEntry(key, newValue)));
+        return flatMapEntries(
+                (key, value) -> entryMapper.apply(key, value).map(newValue -> immutableEntry(key, newValue)));
     }
 
     /**
@@ -137,7 +137,8 @@ public interface KeyedStream<K, V> {
      * Returns a keyed stream consisting of the results of replacing each key of this stream with the
      * contents of a mapped stream produced by applying the provided mapping function to that entry.
      */
-    default <R> KeyedStream<R, V> flatMapKeys(BiFunction<? super K, ? super V, ? extends Stream<? extends R>> keyMapper) {
+    default <R> KeyedStream<R, V> flatMapKeys(
+            BiFunction<? super K, ? super V, ? extends Stream<? extends R>> keyMapper) {
         return flatMapEntries((key, value) -> keyMapper.apply(key, value).map(newKey -> immutableEntry(newKey, value)));
     }
 
@@ -146,7 +147,8 @@ public interface KeyedStream<K, V> {
      * contents of a mapped stream produced by applying the provided mapping function.
      */
     <K2, V2> KeyedStream<K2, V2> flatMapEntries(
-            BiFunction<? super K, ? super V, ? extends Stream<? extends Map.Entry<? extends K2, ? extends V2>>> entryMapper);
+            BiFunction<? super K, ? super V, ? extends Stream<? extends Map.Entry<? extends K2, ? extends V2>>>
+                    entryMapper);
 
     /**
      * Performs an action for each key-value pair in the stream.
@@ -269,5 +271,4 @@ public interface KeyedStream<K, V> {
                 },
                 (List<V> values) -> KeyedStream.of(values.stream()));
     }
-
 }

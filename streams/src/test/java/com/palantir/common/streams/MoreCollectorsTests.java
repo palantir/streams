@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
+ * (c) Copyright 2016 Palantir Technologies Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
  */
 package com.palantir.common.streams;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import static com.google.common.truth.Truth.assertThat;
 
 import java.util.List;
 import java.util.Map;
@@ -26,8 +24,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import static com.google.common.truth.Truth.assertThat;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 public class MoreCollectorsTests {
 
@@ -82,5 +81,4 @@ public class MoreCollectorsTests {
         thrown.expect(IllegalArgumentException.class);
         Stream.of(1, 1).collect(MoreCollectors.toImmutableMap(k -> k, k -> 2));
     }
-
 }

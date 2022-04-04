@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Palantir Technologies, Inc. All rights reserved.
+ * (c) Copyright 2017 Palantir Technologies Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import java.util.Spliterator;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -30,6 +26,9 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.palantir.common.streams.BufferingSpliterator.CompletionStrategy;
 import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
 import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,11 +45,14 @@ public final class BufferingSpliteratorTests {
     private final SettableFuture<String> future = SettableFuture.create();
     private final SettableFuture<String> otherFuture = SettableFuture.create();
 
-    @Mock private Consumer<ListenableFuture<String>> consumer;
+    @Mock
+    private Consumer<ListenableFuture<String>> consumer;
 
-    @Mock private Spliterator<ListenableFuture<String>> sourceSpliterator;
+    @Mock
+    private Spliterator<ListenableFuture<String>> sourceSpliterator;
 
-    @Rule public final MockitoRule mockitoRule = MockitoJUnit.rule();
+    @Rule
+    public final MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private final CompletionStrategy completionStrategy;
 
@@ -67,15 +69,18 @@ public final class BufferingSpliteratorTests {
 
     @Before
     public void before() {
-        when(sourceSpliterator.tryAdvance(any())).thenAnswer(x -> {
-            Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
-            consumer.accept(future);
-            return true;
-        }).thenAnswer(x -> {
-            Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
-            consumer.accept(otherFuture);
-            return true;
-        }).thenReturn(false);
+        when(sourceSpliterator.tryAdvance(any()))
+                .thenAnswer(x -> {
+                    Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
+                    consumer.accept(future);
+                    return true;
+                })
+                .thenAnswer(x -> {
+                    Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
+                    consumer.accept(otherFuture);
+                    return true;
+                })
+                .thenReturn(false);
     }
 
     @Test
@@ -132,8 +137,8 @@ public final class BufferingSpliteratorTests {
         String data = "data";
         ListenableFuture<String> someFuture = Futures.immediateFuture(data);
 
-        Spliterator<ListenableFuture<String>> spliterator =
-                new BufferingSpliterator<>(completionStrategy, Stream.of(someFuture).spliterator(), 1);
+        Spliterator<ListenableFuture<String>> spliterator = new BufferingSpliterator<>(
+                completionStrategy, Stream.of(someFuture).spliterator(), 1);
 
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
         verify(consumer).accept(argThat(new FutureContains<>(data)));
@@ -144,8 +149,7 @@ public final class BufferingSpliteratorTests {
     public void testEstimateSize_hasSize() {
         Spliterator<ListenableFuture<String>> futures =
                 Stream.<ListenableFuture<String>>of(future, otherFuture).spliterator();
-        Spliterator<ListenableFuture<String>> spliterator =
-                new BufferingSpliterator<>(completionStrategy, futures, 1);
+        Spliterator<ListenableFuture<String>> spliterator = new BufferingSpliterator<>(completionStrategy, futures, 1);
         assertThat(spliterator.estimateSize()).isEqualTo(2);
         future.set("data");
         spliterator.tryAdvance(consumer);
