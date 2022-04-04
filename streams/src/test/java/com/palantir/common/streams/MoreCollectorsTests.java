@@ -33,7 +33,8 @@ public class MoreCollectorsTests {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    private final List<Integer> LARGE_LIST = IntStream.range(0, 100000).boxed().collect(Collectors.toList());
+    private static final List<Integer> LARGE_LIST =
+            IntStream.range(0, 100000).boxed().collect(Collectors.toList());
 
     @Test
     public void test_immutable_list() {

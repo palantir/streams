@@ -31,7 +31,7 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
 
     private final Stream<Entry<? extends K, ? extends V>> entries;
 
-    public KeyedStreamImpl(Stream<Entry<? extends K, ? extends V>> entries) {
+    KeyedStreamImpl(Stream<Entry<? extends K, ? extends V>> entries) {
         this.entries = entries;
     }
 
@@ -75,16 +75,16 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
         map.put(entry.getKey(), entry.getValue());
     }
 
+    private static <K, V> void accumulate(Multimap<K, V> multimap, Map.Entry<? extends K, ? extends V> entry) {
+        multimap.put(entry.getKey(), entry.getValue());
+    }
+
     private static <K, V> void combine(Map<K, V> map, Map<K, V> entries) {
         Set<K> duplicates = Sets.intersection(map.keySet(), entries.keySet());
         if (!duplicates.isEmpty()) {
             throw new IllegalStateException("Duplicate keys " + duplicates);
         }
         map.putAll(entries);
-    }
-
-    private static <K, V> void accumulate(Multimap<K, V> multimap, Map.Entry<? extends K, ? extends V> entry) {
-        multimap.put(entry.getKey(), entry.getValue());
     }
 
     private static <K, V> void combine(Multimap<K, V> multimap, Multimap<K, V> entries) {

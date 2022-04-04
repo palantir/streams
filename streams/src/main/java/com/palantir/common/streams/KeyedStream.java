@@ -15,9 +15,8 @@
  */
 package com.palantir.common.streams;
 
-import static com.google.common.collect.Maps.immutableEntry;
-
 import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import java.util.ArrayList;
@@ -74,7 +73,7 @@ public interface KeyedStream<K, V> {
      * the value produced by applying the provided mapping function.
      */
     default <R> KeyedStream<K, R> map(Function<? super V, ? extends R> mapper) {
-        return mapEntries((key, value) -> immutableEntry(key, mapper.apply(value)));
+        return mapEntries((key, value) -> Maps.immutableEntry(key, mapper.apply(value)));
     }
 
     /**
@@ -82,7 +81,7 @@ public interface KeyedStream<K, V> {
      * the value produced by applying the provided mapping function to that entry.
      */
     default <R> KeyedStream<K, R> map(BiFunction<? super K, ? super V, ? extends R> entryMapper) {
-        return mapEntries((key, value) -> immutableEntry(key, entryMapper.apply(key, value)));
+        return mapEntries((key, value) -> Maps.immutableEntry(key, entryMapper.apply(key, value)));
     }
 
     /**
@@ -90,7 +89,7 @@ public interface KeyedStream<K, V> {
      * the key produced by applying the provided mapping function.
      */
     default <R> KeyedStream<R, V> mapKeys(Function<? super K, ? extends R> keyMapper) {
-        return mapEntries((key, value) -> immutableEntry(keyMapper.apply(key), value));
+        return mapEntries((key, value) -> Maps.immutableEntry(keyMapper.apply(key), value));
     }
 
     /**
@@ -98,7 +97,7 @@ public interface KeyedStream<K, V> {
      * the key produced by applying the provided mapping function to that entry.
      */
     default <R> KeyedStream<R, V> mapKeys(BiFunction<? super K, ? super V, ? extends R> keyMapper) {
-        return mapEntries((key, value) -> immutableEntry(keyMapper.apply(key, value), value));
+        return mapEntries((key, value) -> Maps.immutableEntry(keyMapper.apply(key, value), value));
     }
 
     /**
@@ -113,7 +112,7 @@ public interface KeyedStream<K, V> {
      * contents of a mapped stream produced by applying the provided mapping function.
      */
     default <R> KeyedStream<K, R> flatMap(Function<? super V, ? extends Stream<? extends R>> mapper) {
-        return flatMapEntries((key, value) -> mapper.apply(value).map(newValue -> immutableEntry(key, newValue)));
+        return flatMapEntries((key, value) -> mapper.apply(value).map(newValue -> Maps.immutableEntry(key, newValue)));
     }
 
     /**
@@ -122,7 +121,7 @@ public interface KeyedStream<K, V> {
      */
     default <R> KeyedStream<K, R> flatMap(BiFunction<? super K, ? super V, ? extends Stream<? extends R>> entryMapper) {
         return flatMapEntries(
-                (key, value) -> entryMapper.apply(key, value).map(newValue -> immutableEntry(key, newValue)));
+                (key, value) -> entryMapper.apply(key, value).map(newValue -> Maps.immutableEntry(key, newValue)));
     }
 
     /**
@@ -130,7 +129,7 @@ public interface KeyedStream<K, V> {
      * contents of a mapped stream produced by applying the provided mapping function.
      */
     default <R> KeyedStream<R, V> flatMapKeys(Function<? super K, ? extends Stream<? extends R>> keyMapper) {
-        return flatMapEntries((key, value) -> keyMapper.apply(key).map(newKey -> immutableEntry(newKey, value)));
+        return flatMapEntries((key, value) -> keyMapper.apply(key).map(newKey -> Maps.immutableEntry(newKey, value)));
     }
 
     /**
@@ -139,7 +138,8 @@ public interface KeyedStream<K, V> {
      */
     default <R> KeyedStream<R, V> flatMapKeys(
             BiFunction<? super K, ? super V, ? extends Stream<? extends R>> keyMapper) {
-        return flatMapEntries((key, value) -> keyMapper.apply(key, value).map(newKey -> immutableEntry(newKey, value)));
+        return flatMapEntries(
+                (key, value) -> keyMapper.apply(key, value).map(newKey -> Maps.immutableEntry(newKey, value)));
     }
 
     /**
@@ -214,7 +214,7 @@ public interface KeyedStream<K, V> {
      * Returns a keyed stream with matching keys and values taken from {@code stream}.
      */
     static <V> KeyedStream<V, V> of(Stream<V> stream) {
-        return KeyedStream.ofEntries(stream.map(value -> immutableEntry(value, value)));
+        return KeyedStream.ofEntries(stream.map(value -> Maps.immutableEntry(value, value)));
     }
 
     /**
@@ -232,17 +232,17 @@ public interface KeyedStream<K, V> {
     }
 
     /**
-     * Returns a keyed stream of Entries.
-     */
-    static <K, V> KeyedStream<K, V> ofEntries(Stream<Map.Entry<K, V>> entries) {
-        return new KeyedStreamImpl<K, V>(entries.map(entry -> entry));
-    }
-
-    /**
      * Returns a keyed stream of {@code multimap}'s entries.
      */
     static <K, V> KeyedStream<K, V> stream(Multimap<K, V> multimap) {
         return KeyedStream.ofEntries(multimap.entries().stream());
+    }
+
+    /**
+     * Returns a keyed stream of Entries.
+     */
+    static <K, V> KeyedStream<K, V> ofEntries(Stream<Map.Entry<K, V>> entries) {
+        return new KeyedStreamImpl<K, V>(entries.map(entry -> entry));
     }
 
     /**

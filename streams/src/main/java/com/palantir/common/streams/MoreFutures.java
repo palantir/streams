@@ -21,7 +21,7 @@ import java.util.concurrent.Future;
 final class MoreFutures {
     private MoreFutures() {}
 
-    @SuppressWarnings("EmptyCatch")
+    @SuppressWarnings({"EmptyCatch", "EmptyCatchBlock"})
     static <T extends Future<U>, U> T blockUntilCompletion(T future) {
         try {
             future.get();

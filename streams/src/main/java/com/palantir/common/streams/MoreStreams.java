@@ -15,14 +15,13 @@
  */
 package com.palantir.common.streams;
 
-import static java.util.Spliterators.spliteratorUnknownSize;
-
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
 import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.Spliterators;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -116,7 +115,7 @@ public final class MoreStreams {
      */
     @Deprecated
     public static <T> Stream<T> stream(Iterator<T> iterator) {
-        return StreamSupport.stream(spliteratorUnknownSize(iterator, 0), NOT_PARALLEL);
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), NOT_PARALLEL);
     }
 
     private MoreStreams() {}

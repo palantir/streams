@@ -17,7 +17,12 @@ package com.palantir.common.streams;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -71,13 +76,13 @@ public final class BufferingSpliteratorTests {
     public void before() {
         when(sourceSpliterator.tryAdvance(any()))
                 .thenAnswer(x -> {
-                    Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
-                    consumer.accept(future);
+                    Consumer<ListenableFuture<String>> con = x.getArgument(0);
+                    con.accept(future);
                     return true;
                 })
                 .thenAnswer(x -> {
-                    Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
-                    consumer.accept(otherFuture);
+                    Consumer<ListenableFuture<String>> con = x.getArgument(0);
+                    con.accept(otherFuture);
                     return true;
                 })
                 .thenReturn(false);
