@@ -1,1 +1,3 @@
-rootProject.name = 'streams'
+rootProject.name = 'streams-root'
+
+include 'streams'

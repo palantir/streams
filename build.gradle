@@ -23,25 +23,28 @@ apply plugin: 'com.palantir.external-publish'
 apply plugin: 'com.palantir.baseline'
 apply plugin: 'com.palantir.git-version'
 apply plugin: 'com.palantir.consistent-versions'
-apply plugin: 'com.palantir.java-format'
-apply plugin: 'com.palantir.external-publish-jar'
+apply plugin: 'com.palantir.baseline-java-versions'
 
-repositories {
-    mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+javaVersions {
+    libraryTarget = 11
+    runtime = 17
 }
 
-sourceCompatibility = 11
-targetCompatibility = 11
+allprojects {
+    repositories {
+        mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+    }
 
-group 'com.palantir.common'
-version System.env.CIRCLE_TAG ?: gitVersion()
+    sourceCompatibility = 11
+    targetCompatibility = 11
 
-dependencies {
-    api 'com.google.guava:guava'
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.assertj:assertj-core:3.5.2'
-    testImplementation 'org.mockito:mockito-core:2.10.0'
-    testImplementation 'com.google.truth:truth:0.28'
+    group 'com.palantir.common'
+    version System.env.CIRCLE_TAG ?: gitVersion()
 }
 
-check.dependsOn javadoc
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'com.palantir.java-format'
+
+    check.dependsOn javadoc
+}
