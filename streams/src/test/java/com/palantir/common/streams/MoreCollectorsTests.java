@@ -65,7 +65,7 @@ public class MoreCollectorsTests {
     public void test_immutable_map() {
         Map<Integer, Integer> map = LARGE_LIST.stream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
         assertThat(map.keySet()).containsExactlyElementsIn(LARGE_LIST);
-        map.forEach((k, v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
+        map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
     }
 
     @Test
@@ -73,12 +73,12 @@ public class MoreCollectorsTests {
         Map<Integer, Integer> map =
                 LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
         assertThat(map.keySet()).containsExactlyElementsIn(LARGE_LIST);
-        map.forEach((k, v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
+        map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
     }
 
     @Test
     public void test_immutable_map_duplicate_keys() {
         thrown.expect(IllegalArgumentException.class);
-        Stream.of(1, 1).collect(MoreCollectors.toImmutableMap(k -> k, k -> 2));
+        Stream.of(1, 1).collect(MoreCollectors.toImmutableMap(k -> k, _k -> 2));
     }
 }

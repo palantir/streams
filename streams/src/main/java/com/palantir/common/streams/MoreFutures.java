@@ -18,9 +18,10 @@ package com.palantir.common.streams;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-class MoreFutures {
+final class MoreFutures {
     private MoreFutures() {}
 
+    @SuppressWarnings("EmptyCatch")
     static <T extends Future<U>, U> T blockUntilCompletion(T future) {
         try {
             future.get();

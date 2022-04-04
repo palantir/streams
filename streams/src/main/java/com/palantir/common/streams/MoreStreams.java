@@ -31,7 +31,7 @@ import java.util.stream.StreamSupport;
 /**
  * Utility methods for Java 8 {@link Stream}.
  */
-public class MoreStreams {
+public final class MoreStreams {
 
     private static final boolean NOT_PARALLEL = false;
 
@@ -102,7 +102,7 @@ public class MoreStreams {
      */
     @Deprecated
     public static <T> Stream<T> stream(Optional<T> optionalValue) {
-        return optionalValue.map(Stream::of).orElse(Stream.of());
+        return optionalValue.map(Stream::of).orElseGet(Stream::empty);
     }
 
     /**

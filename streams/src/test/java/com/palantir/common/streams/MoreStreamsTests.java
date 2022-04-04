@@ -62,7 +62,7 @@ public class MoreStreamsTests {
                     consumer.accept(secondInSource);
                     return true;
                 })
-                .thenAnswer(x -> {
+                .thenAnswer(_x -> {
                     secondInSource.set("first to be completed");
                     firstInSource.set("second to be completed");
                     return false;

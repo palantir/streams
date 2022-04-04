@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 /**
  * Java 8 {@link Collector} for immutable collections.
  */
-public class MoreCollectors {
+public final class MoreCollectors {
 
     /**
      * This collector has similar semantics to {@link Collectors#toSet} except that the resulting set will be

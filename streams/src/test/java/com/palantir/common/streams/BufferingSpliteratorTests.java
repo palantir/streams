@@ -63,7 +63,7 @@ public final class BufferingSpliteratorTests {
                 new Object[] {"InCompletionOrder", InCompletionOrder.INSTANCE});
     }
 
-    public BufferingSpliteratorTests(String name, CompletionStrategy completionStrategy) {
+    public BufferingSpliteratorTests(String _name, CompletionStrategy completionStrategy) {
         this.completionStrategy = completionStrategy;
     }
 
@@ -88,7 +88,7 @@ public final class BufferingSpliteratorTests {
         Spliterator<ListenableFuture<String>> spliterator = new BufferingSpliterator<>(
                 completionStrategy, Stream.<ListenableFuture<String>>empty().spliterator(), 1);
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
-        verifyZeroInteractions(consumer);
+        verifyNoInteractions(consumer);
     }
 
     @Test
@@ -169,7 +169,7 @@ public final class BufferingSpliteratorTests {
         assertThat(spliterator.estimateSize()).isEqualTo(Long.MAX_VALUE);
     }
 
-    private static class FutureContains<V> implements ArgumentMatcher<ListenableFuture<V>> {
+    private static final class FutureContains<V> implements ArgumentMatcher<ListenableFuture<V>> {
         private final V value;
 
         private FutureContains(V value) {

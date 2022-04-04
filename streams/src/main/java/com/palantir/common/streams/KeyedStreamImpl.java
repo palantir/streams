@@ -18,8 +18,10 @@ package com.palantir.common.streams;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
@@ -45,7 +47,7 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
 
     @Override
     public <M extends Multimap<K, V>> M collectToMultimap(Supplier<M> supplier) {
-        return entries.collect(supplier::get, KeyedStreamImpl::accumulate, KeyedStreamImpl::combine);
+        return entries.collect(supplier, KeyedStreamImpl::accumulate, KeyedStreamImpl::combine);
     }
 
     @Override
@@ -74,9 +76,10 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
     }
 
     private static <K, V> void combine(Map<K, V> map, Map<K, V> entries) {
-        map.keySet().stream().filter(entries::containsKey).findAny().map(duplicate -> {
-            throw new IllegalStateException("Duplicate key " + duplicate);
-        });
+        Set<K> duplicates = Sets.intersection(map.keySet(), entries.keySet());
+        if (!duplicates.isEmpty()) {
+            throw new IllegalStateException("Duplicate keys " + duplicates);
+        }
         map.putAll(entries);
     }
 
