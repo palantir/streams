@@ -9,10 +9,10 @@ org.checkerframework:checker-qual:3.12.0 (1 constraints: 480a3bbf)
 
 [Test dependencies]
 com.google.truth:truth:0.28 (1 constraints: de04f730)
-junit:junit:4.13.2 (2 constraints: 731188f8)
+junit:junit:4.13.2 (2 constraints: 6a0f0687)
 net.bytebuddy:byte-buddy:1.12.8 (1 constraints: 460b40de)
 net.bytebuddy:byte-buddy-agent:1.12.8 (1 constraints: 460b40de)
-org.assertj:assertj-core:3.22.0 (1 constraints: 0c050b36)
+org.assertj:assertj-core:3.22.0 (1 constraints: 39053f3b)
 org.hamcrest:hamcrest-core:1.3 (1 constraints: cc05fe3f)
-org.mockito:mockito-core:4.4.0 (1 constraints: 35052f3b)
+org.mockito:mockito-core:4.4.0 (1 constraints: 0a050b36)
 org.objenesis:objenesis:3.2 (1 constraints: b10a13bd)
