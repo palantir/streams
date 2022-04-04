@@ -1,0 +1,18 @@
+# Run ./gradlew --write-locks to regenerate this file
+com.google.code.findbugs:jsr305:3.0.2 (1 constraints: 170aecb4)
+com.google.errorprone:error_prone_annotations:2.11.0 (1 constraints: 460a32bf)
+com.google.guava:failureaccess:1.0.1 (1 constraints: 140ae1b4)
+com.google.guava:guava:31.1-jre (2 constraints: 7910b2b2)
+com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
+com.google.j2objc:j2objc-annotations:1.3 (1 constraints: b809eda0)
+org.checkerframework:checker-qual:3.12.0 (1 constraints: 480a3bbf)
+
+[Test dependencies]
+com.google.truth:truth:0.28 (1 constraints: de04f730)
+junit:junit:4.13.2 (2 constraints: 731188f8)
+net.bytebuddy:byte-buddy:1.12.8 (1 constraints: 460b40de)
+net.bytebuddy:byte-buddy-agent:1.12.8 (1 constraints: 460b40de)
+org.assertj:assertj-core:3.22.0 (1 constraints: 0c050b36)
+org.hamcrest:hamcrest-core:1.3 (1 constraints: cc05fe3f)
+org.mockito:mockito-core:4.4.0 (1 constraints: 35052f3b)
+org.objenesis:objenesis:3.2 (1 constraints: b10a13bd)

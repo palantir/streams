@@ -4,43 +4,44 @@
 
 buildscript {
     repositories {
-        jcenter()
+        gradlePluginPortal() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+        mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
     }
 
     dependencies {
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.3'
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.18"
+        classpath 'com.palantir.gradle.externalpublish:gradle-external-publish-plugin:1.11.0'
+        classpath 'com.palantir.javaformat:gradle-palantir-java-format:2.20.0'
+        classpath 'com.palantir.gradle.revapi:gradle-revapi:1.6.0'
+        classpath 'com.palantir.gradle.consistentversions:gradle-consistent-versions:2.9.0'
+        classpath 'com.palantir.baseline:gradle-baseline-java:4.96.0'
+        classpath 'com.palantir.gradle.gitversion:gradle-git-version:0.14.0'
+        classpath 'gradle.plugin.org.inferred:gradle-processors:3.6.0'
     }
 }
 
-plugins {
-  id 'com.palantir.git-version' version '0.2.0'
-}
+apply plugin: 'com.palantir.external-publish'
+apply plugin: 'com.palantir.baseline'
+apply plugin: 'com.palantir.git-version'
+apply plugin: 'com.palantir.consistent-versions'
+apply plugin: 'com.palantir.java-format'
+apply plugin: 'com.palantir.external-publish-jar'
 
 repositories {
-  mavenCentral()
+    mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
 }
 
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-
-sourceCompatibility = "1.8"
-targetCompatibility = "1.8"
-
-apply from: "${rootDir}/gradle/publish.gradle"
+sourceCompatibility = 11
+targetCompatibility = 11
 
 group 'com.palantir.common'
 version System.env.CIRCLE_TAG ?: gitVersion()
 
 dependencies {
-  // Pull Guava 21 for JavaDocs, but we don't need it at runtime
-  compileOnly 'com.google.guava:guava:21.0'
-  runtime 'com.google.guava:guava:18.0'
-  testCompile 'junit:junit:4.12'
-  testCompile 'org.assertj:assertj-core:3.5.2'
-  testCompile 'org.mockito:mockito-core:2.10.0'
-  testCompile 'com.google.truth:truth:0.28'
+    api 'com.google.guava:guava'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.assertj:assertj-core:3.5.2'
+    testImplementation 'org.mockito:mockito-core:2.10.0'
+    testImplementation 'com.google.truth:truth:0.28'
 }
 
 check.dependsOn javadoc
