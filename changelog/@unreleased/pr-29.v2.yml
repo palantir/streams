@@ -1,0 +1,5 @@
+type: break
+break:
+  description: 'Streams is compiled with a Java 11 target version, Java 8 is no longer supported'
+  links:
+  - https://github.com/palantir/streams/pull/29
