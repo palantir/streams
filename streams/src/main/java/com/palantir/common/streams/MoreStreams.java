@@ -37,7 +37,11 @@ public final class MoreStreams {
     /**
      * Given a stream of listenable futures, this function will return a blocking stream of the completed
      * futures in completion order, looking at most {@code maxParallelism} futures ahead in the stream.
+     *
+     * @deprecated This function provides no guarantees, maxParallelism is
+     * ignored in many cases (e.g. flatmap has been called).
      */
+    @Deprecated
     public static <T, F extends ListenableFuture<T>> Stream<F> inCompletionOrder(
             Stream<F> futures, int maxParallelism) {
         return StreamSupport.stream(
@@ -65,7 +69,11 @@ public final class MoreStreams {
     /**
      * This function will return a blocking stream that waits for each future to complete before returning it,
      * but which looks ahead {@code maxParallelism} futures to ensure a fixed parallelism rate.
+     *
+     * @deprecated This function provides no guarantees, maxParallelism is
+     * ignored in many cases (e.g. flatmap has been called).
      */
+    @Deprecated
     public static <T, F extends ListenableFuture<T>> Stream<F> blockingStreamWithParallelism(
             Stream<F> futures, int maxParallelism) {
         return StreamSupport.stream(
