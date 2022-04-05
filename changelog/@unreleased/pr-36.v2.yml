@@ -1,0 +1,7 @@
+type: fix
+fix:
+  description: |-
+    Fix incorrect maxParallelism handling on MoreStreams inCompletionOrder and blockingStreamWithParallelism utility methods. Previously it was possible to fan out far beyond the provided limit, depending on the structure of the stream internals.
+    The MoreStreams inCompletionOrder and blockingStreamWithParallelism overloads without an `Executor` argument have been deprecated, they cannot be fixed due to incorrect assumptions about Streams.
+  links:
+  - https://github.com/palantir/streams/pull/36
