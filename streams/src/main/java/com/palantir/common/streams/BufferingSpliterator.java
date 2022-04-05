@@ -23,21 +23,25 @@ import java.util.Spliterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-class BufferingSpliterator<T, F extends ListenableFuture<T>> implements Spliterator<F> {
+class BufferingSpliterator<T, F extends ListenableFuture<T>, U> implements Spliterator<F> {
     private final int maxParallelism;
     private final BlockingQueue<F> completed;
-    private final Spliterator<F> notStarted;
+    private final Spliterator<U> notStarted;
+    private final Function<U, F> toFuture;
     private final CompletionStrategy completionStrategy;
 
     private int inProgress = 0;
 
-    BufferingSpliterator(CompletionStrategy completionStrategy, Spliterator<F> futures, int maxParallelism) {
+    BufferingSpliterator(
+            CompletionStrategy completionStrategy, Spliterator<U> input, Function<U, F> toFuture, int maxParallelism) {
         this.completionStrategy = completionStrategy;
         checkArgument(maxParallelism > 0, "maxParallelism must be at least 1 (got %s)", new Object[] {maxParallelism});
         this.maxParallelism = maxParallelism;
         this.completed = new ArrayBlockingQueue<>(maxParallelism);
-        this.notStarted = futures;
+        this.notStarted = input;
+        this.toFuture = toFuture;
     }
 
     @Override
@@ -67,7 +71,7 @@ class BufferingSpliterator<T, F extends ListenableFuture<T>> implements Splitera
         while (inProgress < maxParallelism) {
             boolean maybeRemainingElements = notStarted.tryAdvance(nextInput -> {
                 inProgress++;
-                completionStrategy.registerCompletion(nextInput, completed::add);
+                completionStrategy.registerCompletion(toFuture.apply(nextInput), completed::add);
             });
             if (!maybeRemainingElements) {
                 return;

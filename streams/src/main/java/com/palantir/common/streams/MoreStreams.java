@@ -41,7 +41,8 @@ public final class MoreStreams {
     public static <T, F extends ListenableFuture<T>> Stream<F> inCompletionOrder(
             Stream<F> futures, int maxParallelism) {
         return StreamSupport.stream(
-                new BufferingSpliterator<>(InCompletionOrder.INSTANCE, futures.spliterator(), maxParallelism),
+                new BufferingSpliterator<>(
+                        InCompletionOrder.INSTANCE, futures.spliterator(), Function.identity(), maxParallelism),
                 NOT_PARALLEL);
     }
 
@@ -51,9 +52,13 @@ public final class MoreStreams {
      */
     public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
-        return inCompletionOrder(
-                        arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
-                        maxParallelism)
+        return StreamSupport.stream(
+                        new BufferingSpliterator<>(
+                                InCompletionOrder.INSTANCE,
+                                arguments.spliterator(),
+                                x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor),
+                                maxParallelism),
+                        NOT_PARALLEL)
                 .map(Futures::getUnchecked);
     }
 
@@ -64,7 +69,8 @@ public final class MoreStreams {
     public static <T, F extends ListenableFuture<T>> Stream<F> blockingStreamWithParallelism(
             Stream<F> futures, int maxParallelism) {
         return StreamSupport.stream(
-                        new BufferingSpliterator<>(InSourceOrder.INSTANCE, futures.spliterator(), maxParallelism),
+                        new BufferingSpliterator<>(
+                                InSourceOrder.INSTANCE, futures.spliterator(), Function.identity(), maxParallelism),
                         NOT_PARALLEL)
                 .map(MoreFutures::blockUntilCompletion);
     }
@@ -75,9 +81,14 @@ public final class MoreStreams {
      */
     public static <U, V> Stream<V> blockingStreamWithParallelism(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
-        return blockingStreamWithParallelism(
-                        arguments.map(x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor)),
-                        maxParallelism)
+        return StreamSupport.stream(
+                        new BufferingSpliterator<>(
+                                InSourceOrder.INSTANCE,
+                                arguments.spliterator(),
+                                x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor),
+                                maxParallelism),
+                        NOT_PARALLEL)
+                .map(MoreFutures::blockUntilCompletion)
                 .map(Futures::getUnchecked);
     }
 
