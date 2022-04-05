@@ -33,6 +33,7 @@ import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
 import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Rule;
@@ -91,7 +92,7 @@ public final class BufferingSpliteratorTests {
     @Test
     public void returnsFalseWhenAllFuturesCompleted() {
         Spliterator<ListenableFuture<String>> spliterator = new BufferingSpliterator<>(
-                completionStrategy, Stream.<ListenableFuture<String>>empty().spliterator(), 1);
+                completionStrategy, Stream.<ListenableFuture<String>>empty().spliterator(), Function.identity(), 1);
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
         verifyNoInteractions(consumer);
     }
@@ -99,7 +100,7 @@ public final class BufferingSpliteratorTests {
     @Test
     public void onlyRunsUpToDesiredConcurrencyTasksSimultaneously() {
         Spliterator<ListenableFuture<String>> spliterator =
-                new BufferingSpliterator<>(completionStrategy, sourceSpliterator, 1);
+                new BufferingSpliterator<>(completionStrategy, sourceSpliterator, Function.identity(), 1);
 
         String firstData = "firstData";
         future.set(firstData);
@@ -119,7 +120,7 @@ public final class BufferingSpliteratorTests {
     @Test
     public void runsDesiredConcurrencyTasksSimultaneously() {
         future.set("some string");
-        new BufferingSpliterator<>(completionStrategy, sourceSpliterator, 2).tryAdvance(consumer);
+        new BufferingSpliterator<>(completionStrategy, sourceSpliterator, Function.identity(), 2).tryAdvance(consumer);
 
         verify(sourceSpliterator, times(2)).tryAdvance(any());
     }
@@ -128,7 +129,7 @@ public final class BufferingSpliteratorTests {
     public void doesNotStartNextTaskUntilDoneWithLastValue() {
         future.set("some string");
         Spliterator<ListenableFuture<String>> spliterator =
-                new BufferingSpliterator<>(completionStrategy, sourceSpliterator, 1);
+                new BufferingSpliterator<>(completionStrategy, sourceSpliterator, Function.identity(), 1);
 
         future.set("data");
         spliterator.tryAdvance(consumer);
@@ -143,7 +144,7 @@ public final class BufferingSpliteratorTests {
         ListenableFuture<String> someFuture = Futures.immediateFuture(data);
 
         Spliterator<ListenableFuture<String>> spliterator = new BufferingSpliterator<>(
-                completionStrategy, Stream.of(someFuture).spliterator(), 1);
+                completionStrategy, Stream.of(someFuture).spliterator(), Function.identity(), 1);
 
         assertThat(spliterator.tryAdvance(consumer)).isTrue();
         verify(consumer).accept(argThat(new FutureContains<>(data)));
@@ -154,7 +155,8 @@ public final class BufferingSpliteratorTests {
     public void testEstimateSize_hasSize() {
         Spliterator<ListenableFuture<String>> futures =
                 Stream.<ListenableFuture<String>>of(future, otherFuture).spliterator();
-        Spliterator<ListenableFuture<String>> spliterator = new BufferingSpliterator<>(completionStrategy, futures, 1);
+        Spliterator<ListenableFuture<String>> spliterator =
+                new BufferingSpliterator<>(completionStrategy, futures, Function.identity(), 1);
         assertThat(spliterator.estimateSize()).isEqualTo(2);
         future.set("data");
         spliterator.tryAdvance(consumer);
@@ -168,7 +170,7 @@ public final class BufferingSpliteratorTests {
     public void testEstimateSize_unsized() {
         when(sourceSpliterator.estimateSize()).thenReturn(Long.MAX_VALUE);
         Spliterator<ListenableFuture<String>> spliterator =
-                new BufferingSpliterator<>(completionStrategy, sourceSpliterator, 1);
+                new BufferingSpliterator<>(completionStrategy, sourceSpliterator, Function.identity(), 1);
         future.set("data");
         spliterator.tryAdvance(consumer);
         assertThat(spliterator.estimateSize()).isEqualTo(Long.MAX_VALUE);
