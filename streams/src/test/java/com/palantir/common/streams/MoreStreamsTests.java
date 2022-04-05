@@ -22,12 +22,15 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.Uninterruptibles;
+import java.time.Duration;
 import java.util.Spliterator;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
@@ -108,6 +111,44 @@ public class MoreStreamsTests {
                                     IntStream.range(0, 3).boxed(), reorder(), executorService, 3)
                             .collect(toList()))
                     .containsExactly(0, 1, 2);
+        } finally {
+            executorService.shutdown();
+            executorService.awaitTermination(1, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    public void testConcurrencySimpleStream() throws InterruptedException {
+        testConcurrency(IntStream.range(0, 3).boxed());
+    }
+
+    @Test
+    public void testConcurrencyWithFlatmap() throws InterruptedException {
+        testConcurrency(Stream.of(1).flatMap(_ignored -> IntStream.range(0, 3).boxed()));
+    }
+
+    private void testConcurrency(Stream<Integer> value) throws InterruptedException {
+        AtomicInteger maximum = new AtomicInteger(-1);
+        AtomicInteger current = new AtomicInteger();
+        int maxParallelism = 1;
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        try {
+            Stream<Integer> inCompletionOrder = MoreStreams.inCompletionOrder(
+                    value,
+                    input -> {
+                        int running = current.incrementAndGet();
+                        maximum.accumulateAndGet(running, Math::max);
+                        try {
+                            Uninterruptibles.sleepUninterruptibly(Duration.ofMillis(200));
+                        } finally {
+                            current.decrementAndGet();
+                        }
+                        return input;
+                    },
+                    executorService,
+                    maxParallelism);
+            assertThat(inCompletionOrder.collect(toList())).containsExactlyInAnyOrder(0, 1, 2);
+            assertThat(maximum).hasValue(maxParallelism);
         } finally {
             executorService.shutdown();
             executorService.awaitTermination(1, TimeUnit.SECONDS);
