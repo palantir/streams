@@ -2,4 +2,4 @@ com.google.guava:guava = 31.1-jre
 junit:junit = 4.13.2
 org.assertj:* = 3.22.0
 org.mockito:* = 4.4.0
-com.google.truth:truth = 0.28
+com.google.truth:truth = 1.1.3
