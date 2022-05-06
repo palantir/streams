@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.Spliterators;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -98,6 +99,31 @@ public final class MoreStreams {
                         NOT_PARALLEL)
                 .map(MoreFutures::blockUntilCompletion)
                 .map(Futures::getUnchecked);
+    }
+
+    /**
+     * A convenient variant of {@link #blockingStreamWithParallelism(Stream, Function, Executor, int)} in which the user
+     * passes in a consumer (rather than and a function) and the method returns once all members of the stream have
+     * completed consumption.
+     */
+    public static <U> void blockingConsumeStreamWithParallelism(
+            Stream<U> arguments, Consumer<U> consumer, Executor executor, int maxParallelism) {
+        StreamSupport.stream(
+                        new BufferingSpliterator<>(
+                                InSourceOrder.INSTANCE,
+                                arguments.spliterator(),
+                                x -> Futures.transform(
+                                        Futures.immediateFuture(x),
+                                        y -> {
+                                            consumer.accept(y);
+                                            return null;
+                                        },
+                                        executor),
+                                maxParallelism),
+                        NOT_PARALLEL)
+                .map(MoreFutures::blockUntilCompletion)
+                .map(Futures::getUnchecked)
+                .forEach(_unused -> {});
     }
 
     /**
