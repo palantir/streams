@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
@@ -33,6 +34,11 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
 
     KeyedStreamImpl(Stream<Entry<? extends K, ? extends V>> entries) {
         this.entries = entries;
+    }
+
+    @Override
+    public KeyedStream<K, V> peek(BiConsumer<K, V> consumer) {
+        return new KeyedStreamImpl<>(entries.peek(entry -> consumer.accept(entry.getKey(), entry.getValue())));
     }
 
     @Override
@@ -53,16 +59,14 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
     @Override
     public <K2, V2> KeyedStream<K2, V2> mapEntries(
             BiFunction<? super K, ? super V, ? extends Entry<? extends K2, ? extends V2>> entryMapper) {
-        return new KeyedStreamImpl<K2, V2>(entries.<Map.Entry<? extends K2, ? extends V2>>map(
-                entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
+        return new KeyedStreamImpl<>(entries.map(entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
     }
 
     @Override
     public <K2, V2> KeyedStream<K2, V2> flatMapEntries(
             BiFunction<? super K, ? super V, ? extends Stream<? extends Entry<? extends K2, ? extends V2>>>
                     entryMapper) {
-        return new KeyedStreamImpl<K2, V2>(
-                entries.flatMap(entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
+        return new KeyedStreamImpl<>(entries.flatMap(entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
     }
 
     @Override
