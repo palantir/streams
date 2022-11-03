@@ -1,0 +1,5 @@
+type: feature
+feature:
+  description: Add peek methods to KeyedStream
+  links:
+  - https://github.com/palantir/streams/pull/127

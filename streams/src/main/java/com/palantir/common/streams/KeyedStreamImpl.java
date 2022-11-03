@@ -53,16 +53,14 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
     @Override
     public <K2, V2> KeyedStream<K2, V2> mapEntries(
             BiFunction<? super K, ? super V, ? extends Entry<? extends K2, ? extends V2>> entryMapper) {
-        return new KeyedStreamImpl<K2, V2>(entries.<Map.Entry<? extends K2, ? extends V2>>map(
-                entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
+        return new KeyedStreamImpl<>(entries.map(entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
     }
 
     @Override
     public <K2, V2> KeyedStream<K2, V2> flatMapEntries(
             BiFunction<? super K, ? super V, ? extends Stream<? extends Entry<? extends K2, ? extends V2>>>
                     entryMapper) {
-        return new KeyedStreamImpl<K2, V2>(
-                entries.flatMap(entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
+        return new KeyedStreamImpl<>(entries.flatMap(entry -> entryMapper.apply(entry.getKey(), entry.getValue())));
     }
 
     @Override
