@@ -50,7 +50,9 @@ public interface KeyedStream<K, V> {
      * Returns a keyed stream consisting of elements in this stream,
      * performing the provided action on each element of this stream.
      */
-    KeyedStream<K, V> peek(BiConsumer<K, V> consumer);
+    default KeyedStream<K, V> peek(BiConsumer<K, V> consumer) {
+        return new KeyedStreamImpl<>(entries().peek(entry -> consumer.accept(entry.getKey(), entry.getValue())));
+    }
 
     /**
      * Returns a keyed stream consisting of the entries of this stream whose values match

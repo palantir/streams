@@ -22,7 +22,6 @@ import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
@@ -34,11 +33,6 @@ class KeyedStreamImpl<K, V> implements KeyedStream<K, V> {
 
     KeyedStreamImpl(Stream<Entry<? extends K, ? extends V>> entries) {
         this.entries = entries;
-    }
-
-    @Override
-    public KeyedStream<K, V> peek(BiConsumer<K, V> consumer) {
-        return new KeyedStreamImpl<>(entries.peek(entry -> consumer.accept(entry.getKey(), entry.getValue())));
     }
 
     @Override
