@@ -73,7 +73,7 @@ public final class MoreCollectors {
         return Collector.of(
                 ImmutableMap::<K, V>builder,
                 (builder, value) -> builder.put(keyFunction.apply(value), valueFunction.apply(value)),
-                (left, right) -> left.putAll(right.build()),
+                (left, right) -> left.putAll(right.buildOrThrow()),
                 ImmutableMap.Builder::build);
     }
 
