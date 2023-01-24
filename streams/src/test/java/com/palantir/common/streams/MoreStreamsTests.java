@@ -36,13 +36,16 @@ import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class MoreStreamsTests {
     private SettableFuture<String> firstInSource = SettableFuture.create();
     private SettableFuture<String> secondInSource = SettableFuture.create();
@@ -52,7 +55,7 @@ public class MoreStreamsTests {
 
     private Stream<SettableFuture<String>> stream;
 
-    @Before
+    @BeforeEach
     public void before() {
         when(spliterator.tryAdvance(any()))
                 .thenAnswer(x -> {
