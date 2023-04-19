@@ -15,7 +15,7 @@
  */
 package com.palantir.common.streams;
 
-import static com.google.common.truth.Truth.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Map;
@@ -24,14 +24,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.Rule;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.ExpectedException;
 
 public class MoreCollectorsTests {
-
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
 
     private static final List<Integer> LARGE_LIST =
             IntStream.range(0, 100000).boxed().collect(Collectors.toList());
@@ -43,6 +39,7 @@ public class MoreCollectorsTests {
     }
 
     @Test
+    @SuppressWarnings("DangerousParallelStreamUsage") // explicitly testing parallel streams
     public void test_parallel_immutable_list() {
         List<Integer> list = LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableList());
         assertThat(list).isEqualTo(LARGE_LIST);
@@ -51,13 +48,14 @@ public class MoreCollectorsTests {
     @Test
     public void test_immutable_set() {
         Set<Integer> set = LARGE_LIST.stream().collect(MoreCollectors.toImmutableSet());
-        assertThat(set).containsExactlyElementsIn(LARGE_LIST);
+        assertThat(set).containsExactlyElementsOf(LARGE_LIST);
     }
 
     @Test
+    @SuppressWarnings("DangerousParallelStreamUsage") // explicitly testing parallel streams
     public void test_parallel_immutable_set() {
         Set<Integer> set = LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableSet());
-        assertThat(set).containsExactlyElementsIn(LARGE_LIST);
+        assertThat(set).containsExactlyElementsOf(LARGE_LIST);
     }
 
     private Function<Integer, Integer> valueMap = x -> x * 2;
@@ -65,21 +63,24 @@ public class MoreCollectorsTests {
     @Test
     public void test_immutable_map() {
         Map<Integer, Integer> map = LARGE_LIST.stream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
-        assertThat(map.keySet()).containsExactlyElementsIn(LARGE_LIST);
+        assertThat(map.keySet()).containsExactlyElementsOf(LARGE_LIST);
         map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
     }
 
     @Test
+    @SuppressWarnings("DangerousParallelStreamUsage") // explicitly testing parallel streams
     public void test_parallel_immutable_map() {
         Map<Integer, Integer> map =
                 LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
-        assertThat(map.keySet()).containsExactlyElementsIn(LARGE_LIST);
+        assertThat(map.keySet()).containsExactlyElementsOf(LARGE_LIST);
         map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
     }
 
     @Test
     public void test_immutable_map_duplicate_keys() {
-        thrown.expect(IllegalArgumentException.class);
-        Stream.of(1, 1).collect(MoreCollectors.toImmutableMap(k -> k, _k -> 2));
+        Stream<Integer> stream = Stream.of(1, 1);
+        Assertions.assertThatThrownBy(() -> stream.collect(MoreCollectors.toImmutableMap(k -> k, _k -> 2)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Multiple entries with same key: 1=2 and 1=2");
     }
 }
