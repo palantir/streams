@@ -16,6 +16,7 @@
 package com.palantir.common.streams;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class MoreCollectorsTests {
@@ -79,7 +79,7 @@ public class MoreCollectorsTests {
     @Test
     public void test_immutable_map_duplicate_keys() {
         Stream<Integer> stream = Stream.of(1, 1);
-        Assertions.assertThatThrownBy(() -> stream.collect(MoreCollectors.toImmutableMap(k -> k, _k -> 2)))
+        assertThatThrownBy(() -> stream.collect(MoreCollectors.toImmutableMap(k -> k, _k -> 2)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Multiple entries with same key: 1=2 and 1=2");
     }
