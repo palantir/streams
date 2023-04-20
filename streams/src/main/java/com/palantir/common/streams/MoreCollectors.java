@@ -80,7 +80,7 @@ public final class MoreCollectors {
      * This collector has similar semantics to {@link ImmutableList#toImmutableList()}; however,
      * the builder will be presized with the expected size to avoid resizing while collecting.
      */
-    public static <T> Collector<T, ?, List<T>> toImmutableListWithExpectedSize(int expectedSize) {
+    public static <T> Collector<T, ?, ImmutableList<T>> toImmutableListWithExpectedSize(int expectedSize) {
         return Collector.of(
                 () -> ImmutableList.<T>builderWithExpectedSize(expectedSize),
                 ImmutableList.Builder::add,
@@ -124,7 +124,7 @@ public final class MoreCollectors {
      * the builder will be presized with the expected size to avoid resizing while collecting.
      * Duplicate keys will result in an error.
      */
-    public static <T, K, V> Collector<T, ?, Map<K, V>> toImmutableMapWithExpectedSize(
+    public static <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMapWithExpectedSize(
             int expectedSize, Function<T, K> keyFunction, Function<T, V> valueFunction) {
         return Collector.of(
                 () -> ImmutableMap.<K, V>builderWithExpectedSize(expectedSize),
