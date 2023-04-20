@@ -16,8 +16,9 @@
 package com.palantir.common.streams;
 
 import static com.google.common.collect.Maps.immutableEntry;
-import static com.google.common.truth.Truth.assertThat;
 import static com.palantir.common.streams.KeyedStream.toKeyedStream;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -33,14 +34,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.ExpectedException;
 
 public class KeyedStreamTests {
-
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void test_collect_single_value_as_map() {
@@ -57,8 +53,9 @@ public class KeyedStreamTests {
     @Test
     public void test_collect_duplicate_keys_as_map() {
         KeyedStream<Integer, Integer> stream = Stream.of(6, 6).collect(toKeyedStream());
-        thrown.expect(IllegalStateException.class);
-        stream.collectToMap();
+        assertThatThrownBy(stream::collectToMap)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Duplicate key 6");
     }
 
     @Test
@@ -87,8 +84,7 @@ public class KeyedStreamTests {
                 .mapKeys(n -> String.join("", Iterables.limit(Iterables.cycle("x"), n)))
                 .collectTo(TreeMap::new);
         assertThat(map.entrySet())
-                .containsExactly(immutableEntry("xxx", 3), immutableEntry("xxxx", 4), immutableEntry("xxxxx", 5))
-                .inOrder();
+                .containsExactly(immutableEntry("xxx", 3), immutableEntry("xxxx", 4), immutableEntry("xxxxx", 5));
     }
 
     @Test
@@ -152,6 +148,6 @@ public class KeyedStreamTests {
             result.add(right);
         });
 
-        assertThat(result).containsExactly(1, 4, 2, 5, 3, 6).inOrder();
+        assertThat(result).containsExactly(1, 4, 2, 5, 3, 6);
     }
 }

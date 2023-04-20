@@ -41,9 +41,6 @@ allprojects {
         mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
     }
 
-    sourceCompatibility = 11
-    targetCompatibility = 11
-
     group 'com.palantir.common'
     version System.env.CIRCLE_TAG ?: gitVersion()
 }
@@ -52,5 +49,8 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'com.palantir.java-format'
 
-    check.dependsOn javadoc
+    tasks.check.dependsOn(javadoc)
+    tasks.check.dependsOn(checkImplicitDependencies)
+    tasks.check.dependsOn(checkUnusedDependencies)
+    tasks.check.dependsOn(checkUnusedConstraints)
 }
