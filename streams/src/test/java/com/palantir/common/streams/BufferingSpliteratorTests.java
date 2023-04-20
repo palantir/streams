@@ -24,7 +24,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -35,45 +34,32 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.Mock.Strictness;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(Parameterized.class)
+@ExtendWith(MockitoExtension.class)
 public final class BufferingSpliteratorTests {
     private final SettableFuture<String> future = SettableFuture.create();
     private final SettableFuture<String> otherFuture = SettableFuture.create();
 
-    @Mock
+    @Mock(strictness = Strictness.LENIENT)
     private Consumer<ListenableFuture<String>> consumer;
 
-    @Mock
+    @Mock(strictness = Strictness.LENIENT)
     private Spliterator<ListenableFuture<String>> sourceSpliterator;
 
-    @Rule
-    public final MockitoRule mockitoRule = MockitoJUnit.rule();
-
-    private final CompletionStrategy completionStrategy;
-
-    @Parameters(name = "strategy: {0}")
-    public static Iterable<Object[]> parameters() {
-        return ImmutableList.of(
-                new Object[] {"InSourceOrder", InSourceOrder.INSTANCE},
-                new Object[] {"InCompletionOrder", InCompletionOrder.INSTANCE});
+    public static Stream<Arguments> parameters() {
+        return Stream.of(Arguments.of(InSourceOrder.INSTANCE), Arguments.of(InCompletionOrder.INSTANCE));
     }
 
-    public BufferingSpliteratorTests(String _name, CompletionStrategy completionStrategy) {
-        this.completionStrategy = completionStrategy;
-    }
-
-    @Before
+    @BeforeEach
     public void before() {
         when(sourceSpliterator.tryAdvance(any()))
                 .thenAnswer(x -> {
@@ -89,16 +75,18 @@ public final class BufferingSpliteratorTests {
                 .thenReturn(false);
     }
 
-    @Test
-    public void returnsFalseWhenAllFuturesCompleted() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void returnsFalseWhenAllFuturesCompleted(CompletionStrategy completionStrategy) {
         Spliterator<ListenableFuture<String>> spliterator = new BufferingSpliterator<>(
                 completionStrategy, Stream.<ListenableFuture<String>>empty().spliterator(), Function.identity(), 1);
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
         verifyNoInteractions(consumer);
     }
 
-    @Test
-    public void onlyRunsUpToDesiredConcurrencyTasksSimultaneously() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void onlyRunsUpToDesiredConcurrencyTasksSimultaneously(CompletionStrategy completionStrategy) {
         Spliterator<ListenableFuture<String>> spliterator =
                 new BufferingSpliterator<>(completionStrategy, sourceSpliterator, Function.identity(), 1);
 
@@ -117,16 +105,18 @@ public final class BufferingSpliteratorTests {
         verifyNoMoreInteractions(consumer);
     }
 
-    @Test
-    public void runsDesiredConcurrencyTasksSimultaneously() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void runsDesiredConcurrencyTasksSimultaneously(CompletionStrategy completionStrategy) {
         future.set("some string");
         new BufferingSpliterator<>(completionStrategy, sourceSpliterator, Function.identity(), 2).tryAdvance(consumer);
 
         verify(sourceSpliterator, times(2)).tryAdvance(any());
     }
 
-    @Test
-    public void doesNotStartNextTaskUntilDoneWithLastValue() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void doesNotStartNextTaskUntilDoneWithLastValue(CompletionStrategy completionStrategy) {
         future.set("some string");
         Spliterator<ListenableFuture<String>> spliterator =
                 new BufferingSpliterator<>(completionStrategy, sourceSpliterator, Function.identity(), 1);
@@ -138,8 +128,9 @@ public final class BufferingSpliteratorTests {
     }
 
     // This test exists because of an implementation bug while writing this.
-    @Test
-    public void canHandleFutureAlreadyCompleted() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void canHandleFutureAlreadyCompleted(CompletionStrategy completionStrategy) {
         String data = "data";
         ListenableFuture<String> someFuture = Futures.immediateFuture(data);
 
@@ -151,8 +142,9 @@ public final class BufferingSpliteratorTests {
         assertThat(spliterator.tryAdvance(consumer)).isFalse();
     }
 
-    @Test
-    public void testEstimateSize_hasSize() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void testEstimateSize_hasSize(CompletionStrategy completionStrategy) {
         Spliterator<ListenableFuture<String>> futures =
                 Stream.<ListenableFuture<String>>of(future, otherFuture).spliterator();
         Spliterator<ListenableFuture<String>> spliterator =
@@ -166,8 +158,9 @@ public final class BufferingSpliteratorTests {
         assertThat(spliterator.estimateSize()).isEqualTo(0);
     }
 
-    @Test
-    public void testEstimateSize_unsized() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void testEstimateSize_unsized(CompletionStrategy completionStrategy) {
         when(sourceSpliterator.estimateSize()).thenReturn(Long.MAX_VALUE);
         Spliterator<ListenableFuture<String>> spliterator =
                 new BufferingSpliterator<>(completionStrategy, sourceSpliterator, Function.identity(), 1);
