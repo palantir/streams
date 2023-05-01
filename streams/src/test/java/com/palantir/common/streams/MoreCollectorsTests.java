@@ -35,14 +35,14 @@ public class MoreCollectorsTests {
     @Test
     public void test_immutable_list() {
         List<Integer> list = LARGE_LIST.stream().collect(MoreCollectors.toImmutableList());
-        assertThat(list).isEqualTo(LARGE_LIST);
+        assertThat(list).containsExactlyElementsOf(LARGE_LIST);
     }
 
     @Test
     @SuppressWarnings("DangerousParallelStreamUsage") // explicitly testing parallel streams
     public void test_parallel_immutable_list() {
         List<Integer> list = LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableList());
-        assertThat(list).isEqualTo(LARGE_LIST);
+        assertThat(list).containsExactlyElementsOf(LARGE_LIST);
     }
 
     @Test
