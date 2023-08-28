@@ -1,0 +1,5 @@
+type: break
+break:
+  description: Delete deprecated+buggy methods in MoreStreams
+  links:
+  - https://github.com/palantir/streams/pull/212
