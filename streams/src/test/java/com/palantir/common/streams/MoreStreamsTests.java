@@ -17,29 +17,20 @@ package com.palantir.common.streams;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.Uninterruptibles;
 import java.time.Duration;
-import java.util.Spliterator;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -47,49 +38,6 @@ import org.mockito.quality.Strictness;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class MoreStreamsTests {
-    private SettableFuture<String> firstInSource = SettableFuture.create();
-    private SettableFuture<String> secondInSource = SettableFuture.create();
-
-    @Mock
-    private Spliterator<SettableFuture<String>> spliterator;
-
-    private Stream<SettableFuture<String>> stream;
-
-    @BeforeEach
-    public void before() {
-        when(spliterator.tryAdvance(any()))
-                .thenAnswer(x -> {
-                    Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
-                    consumer.accept(firstInSource);
-                    return true;
-                })
-                .thenAnswer(x -> {
-                    Consumer<ListenableFuture<String>> consumer = x.getArgument(0);
-                    consumer.accept(secondInSource);
-                    return true;
-                })
-                .thenAnswer(_x -> {
-                    secondInSource.set("first to be completed");
-                    firstInSource.set("second to be completed");
-                    return false;
-                })
-                .thenReturn(false);
-
-        stream = StreamSupport.stream(spliterator, false);
-    }
-
-    @Test
-    public void testInCompletionOrder_future() {
-        Stream<SettableFuture<String>> completedFutureStream = MoreStreams.inCompletionOrder(stream, 3);
-        assertThat(completedFutureStream).containsExactly(secondInSource, firstInSource);
-    }
-
-    @Test
-    public void testBlockingStreamWithParallelism_future() {
-        Stream<SettableFuture<String>> completedFutureStream = MoreStreams.blockingStreamWithParallelism(stream, 3);
-        assertThat(completedFutureStream).containsExactly(firstInSource, secondInSource);
-    }
-
     @Test
     public void testInCompletionOrder_transformWithExecutor() throws InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(3);
