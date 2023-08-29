@@ -1,0 +1,5 @@
+type: improvement
+improvement:
+  description: Add DoNotCall annotation to deprecated+buggy methods in MoreStreams
+  links:
+  - https://github.com/palantir/streams/pull/213

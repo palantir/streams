@@ -17,6 +17,7 @@ package com.palantir.common.streams;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.errorprone.annotations.DoNotCall;
 import com.palantir.common.streams.BufferingSpliterator.InCompletionOrder;
 import com.palantir.common.streams.BufferingSpliterator.InSourceOrder;
 import java.util.Iterator;
@@ -41,6 +42,7 @@ public final class MoreStreams {
      * @deprecated This function provides no guarantees, maxParallelism is
      * ignored in many cases (e.g. flatmap has been called).
      */
+    @DoNotCall("Use the other inCompletionOrder overload instead")
     @Deprecated
     public static <T, F extends ListenableFuture<T>> Stream<F> inCompletionOrder(
             Stream<F> futures, int maxParallelism) {
@@ -51,8 +53,13 @@ public final class MoreStreams {
     }
 
     /**
-     * A convenient variant of {@link #inCompletionOrder(Stream, int)} in which the user passes in a
-     * function and an executor to run it on.
+     * Given a stream of arguments and a Function mapper, this function will return a blocking stream of the completed
+     * futures in completion order, looking at most {@code maxParallelism} arguments ahead in the stream.
+     *
+     * The caller is required to pass in an executor to run the mapper function on.
+     *
+     * Note: the resulting stream may contain results in a different order than the input arguments. To receive results
+     * in the same order as input arguments, use {@link #blockingStreamWithParallelism(Stream, Function, Executor, int)}.
      */
     public static <U, V> Stream<V> inCompletionOrder(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
@@ -73,6 +80,7 @@ public final class MoreStreams {
      * @deprecated This function provides no guarantees, maxParallelism is
      * ignored in many cases (e.g. flatmap has been called).
      */
+    @DoNotCall("Use the other blockingStreamWithParallelism overload instead")
     @Deprecated
     public static <T, F extends ListenableFuture<T>> Stream<F> blockingStreamWithParallelism(
             Stream<F> futures, int maxParallelism) {
@@ -84,8 +92,11 @@ public final class MoreStreams {
     }
 
     /**
-     * A convenient variant of {@link #blockingStreamWithParallelism(Stream, int)} in which the user passes in a
-     * function and an executor to run it on.
+     * Given a stream of arguments and a Function mapper, this function will return a blocking stream that waits for
+     * each future to complete before returning it, but which looks ahead {@code maxParallelism} arguments to ensure a
+     * fixed parallelism rate.
+     *
+     * The caller is required to pass in an executor to run the mapper function on.
      */
     public static <U, V> Stream<V> blockingStreamWithParallelism(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {

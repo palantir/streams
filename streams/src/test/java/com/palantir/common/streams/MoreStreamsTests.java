@@ -78,12 +78,14 @@ public class MoreStreamsTests {
         stream = StreamSupport.stream(spliterator, false);
     }
 
+    @SuppressWarnings("DoNotCall")
     @Test
     public void testInCompletionOrder_future() {
         Stream<SettableFuture<String>> completedFutureStream = MoreStreams.inCompletionOrder(stream, 3);
         assertThat(completedFutureStream).containsExactly(secondInSource, firstInSource);
     }
 
+    @SuppressWarnings("DoNotCall")
     @Test
     public void testBlockingStreamWithParallelism_future() {
         Stream<SettableFuture<String>> completedFutureStream = MoreStreams.blockingStreamWithParallelism(stream, 3);

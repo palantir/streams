@@ -3,6 +3,8 @@ apply plugin: 'com.palantir.external-publish-jar'
 dependencies {
     api 'com.google.guava:guava'
 
+    implementation 'com.google.errorprone:error_prone_annotations'
+
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
