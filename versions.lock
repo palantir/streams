@@ -8,10 +8,10 @@ com.google.j2objc:j2objc-annotations:2.8 (1 constraints: be09f5a0)
 org.checkerframework:checker-qual:3.41.0 (1 constraints: 4a0a44bf)
 
 [Test dependencies]
-net.bytebuddy:byte-buddy:1.14.10 (2 constraints: ed169066)
+net.bytebuddy:byte-buddy:1.14.11 (2 constraints: ee16b966)
 net.bytebuddy:byte-buddy-agent:1.14.10 (1 constraints: 710bb0e9)
 org.apiguardian:apiguardian-api:1.1.2 (5 constraints: 105480ac)
-org.assertj:assertj-core:3.24.2 (1 constraints: 3d05473b)
+org.assertj:assertj-core:3.25.0 (1 constraints: 3c05483b)
 org.junit.jupiter:junit-jupiter:5.10.1 (1 constraints: 3905423b)
 org.junit.jupiter:junit-jupiter-api:5.10.1 (5 constraints: 17441aaf)
 org.junit.jupiter:junit-jupiter-engine:5.10.1 (1 constraints: 340efe49)
