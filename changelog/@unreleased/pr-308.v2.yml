@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: Propagate stream close
+  links:
+  - https://github.com/palantir/streams/pull/308

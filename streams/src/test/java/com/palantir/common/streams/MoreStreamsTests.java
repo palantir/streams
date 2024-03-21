@@ -30,6 +30,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -55,6 +56,8 @@ public class MoreStreamsTests {
 
     private Stream<SettableFuture<String>> stream;
 
+    private final AtomicBoolean streamClosed = new AtomicBoolean(false);
+
     @BeforeEach
     public void before() {
         when(spliterator.tryAdvance(any()))
@@ -75,7 +78,7 @@ public class MoreStreamsTests {
                 })
                 .thenReturn(false);
 
-        stream = StreamSupport.stream(spliterator, false);
+        stream = StreamSupport.stream(spliterator, false).onClose(() -> streamClosed.set(true));
     }
 
     @SuppressWarnings("DoNotCall")
@@ -83,6 +86,7 @@ public class MoreStreamsTests {
     public void testInCompletionOrder_future() {
         Stream<SettableFuture<String>> completedFutureStream = MoreStreams.inCompletionOrder(stream, 3);
         assertThat(completedFutureStream).containsExactly(secondInSource, firstInSource);
+        assertThat(streamClosed).isTrue();
     }
 
     @SuppressWarnings("DoNotCall")
@@ -90,36 +94,35 @@ public class MoreStreamsTests {
     public void testBlockingStreamWithParallelism_future() {
         Stream<SettableFuture<String>> completedFutureStream = MoreStreams.blockingStreamWithParallelism(stream, 3);
         assertThat(completedFutureStream).containsExactly(firstInSource, secondInSource);
+        assertThat(streamClosed).isTrue();
     }
 
     @Test
     public void testInCompletionOrder_transformWithExecutor() throws InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(3);
-        try {
-            // 2 cannot start until a task has finished, 0 cannot start until 2 is running, so 1 must come first.
-            assertThat(MoreStreams.inCompletionOrder(IntStream.range(0, 3).boxed(), reorder(), executorService, 2)
-                            .collect(toList()))
-                    .startsWith(1)
-                    .containsExactlyInAnyOrder(0, 1, 2);
+        // 2 cannot start until a task has finished, 0 cannot start until 2 is running, so 1 must come first.
+        try (Stream<Integer> integerStream = MoreStreams.inCompletionOrder(
+                IntStream.range(0, 3).boxed().onClose(() -> streamClosed.set(true)), reorder(), executorService, 2)) {
+            assertThat(integerStream.collect(toList())).startsWith(1).containsExactlyInAnyOrder(0, 1, 2);
         } finally {
             executorService.shutdown();
             executorService.awaitTermination(1, TimeUnit.SECONDS);
         }
+        assertThat(streamClosed).isTrue();
     }
 
     @Test
     public void testBlockingStreamWithParallelism_transformWithExecutor() throws InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
-        try {
-            // due to size of thread pool, 1 must finish before 0, but 0 will return first.
-            assertThat(MoreStreams.blockingStreamWithParallelism(
-                                    IntStream.range(0, 3).boxed(), reorder(), executorService, 3)
-                            .collect(toList()))
-                    .containsExactly(0, 1, 2);
+        // due to size of thread pool, 1 must finish before 0, but 0 will return first.
+        try (Stream<Integer> integerStream = MoreStreams.blockingStreamWithParallelism(
+                IntStream.range(0, 3).boxed().onClose(() -> streamClosed.set(true)), reorder(), executorService, 3)) {
+            assertThat(integerStream.collect(toList())).containsExactly(0, 1, 2);
         } finally {
             executorService.shutdown();
             executorService.awaitTermination(1, TimeUnit.SECONDS);
         }
+        assertThat(streamClosed).isTrue();
     }
 
     @Test
@@ -137,27 +140,27 @@ public class MoreStreamsTests {
         AtomicInteger current = new AtomicInteger();
         int maxParallelism = 1;
         ExecutorService executorService = Executors.newFixedThreadPool(3);
-        try {
-            Stream<Integer> inCompletionOrder = MoreStreams.inCompletionOrder(
-                    value,
-                    input -> {
-                        int running = current.incrementAndGet();
-                        maximum.accumulateAndGet(running, Math::max);
-                        try {
-                            Uninterruptibles.sleepUninterruptibly(Duration.ofMillis(200));
-                        } finally {
-                            current.decrementAndGet();
-                        }
-                        return input;
-                    },
-                    executorService,
-                    maxParallelism);
+        try (Stream<Integer> inCompletionOrder = MoreStreams.inCompletionOrder(
+                value.onClose(() -> streamClosed.set(true)),
+                input -> {
+                    int running = current.incrementAndGet();
+                    maximum.accumulateAndGet(running, Math::max);
+                    try {
+                        Uninterruptibles.sleepUninterruptibly(Duration.ofMillis(200));
+                    } finally {
+                        current.decrementAndGet();
+                    }
+                    return input;
+                },
+                executorService,
+                maxParallelism)) {
             assertThat(inCompletionOrder.collect(toList())).containsExactlyInAnyOrder(0, 1, 2);
             assertThat(maximum).hasValue(maxParallelism);
         } finally {
             executorService.shutdown();
             executorService.awaitTermination(1, TimeUnit.SECONDS);
         }
+        assertThat(streamClosed).isTrue();
     }
 
     private UnaryOperator<Integer> reorder() {
