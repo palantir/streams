@@ -47,9 +47,10 @@ public final class MoreStreams {
     public static <T, F extends ListenableFuture<T>> Stream<F> inCompletionOrder(
             Stream<F> futures, int maxParallelism) {
         return StreamSupport.stream(
-                new BufferingSpliterator<>(
-                        InCompletionOrder.INSTANCE, futures.spliterator(), Function.identity(), maxParallelism),
-                NOT_PARALLEL);
+                        new BufferingSpliterator<>(
+                                InCompletionOrder.INSTANCE, futures.spliterator(), Function.identity(), maxParallelism),
+                        NOT_PARALLEL)
+                .onClose(futures::close);
     }
 
     /**
@@ -70,6 +71,7 @@ public final class MoreStreams {
                                 x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor),
                                 maxParallelism),
                         NOT_PARALLEL)
+                .onClose(arguments::close)
                 .map(Futures::getUnchecked);
     }
 
@@ -88,6 +90,7 @@ public final class MoreStreams {
                         new BufferingSpliterator<>(
                                 InSourceOrder.INSTANCE, futures.spliterator(), Function.identity(), maxParallelism),
                         NOT_PARALLEL)
+                .onClose(futures::close)
                 .map(MoreFutures::blockUntilCompletion);
     }
 
@@ -107,6 +110,7 @@ public final class MoreStreams {
                                 x -> Futures.transform(Futures.immediateFuture(x), mapper::apply, executor),
                                 maxParallelism),
                         NOT_PARALLEL)
+                .onClose(arguments::close)
                 .map(MoreFutures::blockUntilCompletion)
                 .map(Futures::getUnchecked);
     }
