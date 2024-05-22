@@ -18,13 +18,16 @@ package com.palantir.common.streams;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class MoreCollectorsTests {
@@ -60,27 +63,54 @@ public class MoreCollectorsTests {
 
     private Function<Integer, Integer> valueMap = x -> x * 2;
 
-    @Test
-    public void test_immutable_map() {
-        Map<Integer, Integer> map = LARGE_LIST.stream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
-        assertThat(map.keySet()).containsExactlyElementsOf(LARGE_LIST);
-        map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
+    @Nested
+    class ToImmutableMapDeprecated {
+        @Test
+        public void test_immutable_map() {
+            Map<Integer, Integer> map = LARGE_LIST.stream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
+            assertThat(map.keySet()).containsExactlyElementsOf(LARGE_LIST);
+            map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
+        }
+
+        @Test
+        @SuppressWarnings("DangerousParallelStreamUsage") // explicitly testing parallel streams
+        public void test_parallel_immutable_map() {
+            Map<Integer, Integer> map =
+                    LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
+            assertThat(map.keySet()).containsExactlyElementsOf(LARGE_LIST);
+            map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
+        }
+
+        @Test
+        public void test_immutable_map_duplicate_keys() {
+            Stream<Integer> stream = Stream.of(1, 1);
+            assertThatThrownBy(() -> stream.collect(MoreCollectors.toImmutableMap(k -> k, _k -> 2)))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Multiple entries with same key: 1=2 and 1=2");
+        }
     }
 
-    @Test
-    @SuppressWarnings("DangerousParallelStreamUsage") // explicitly testing parallel streams
-    public void test_parallel_immutable_map() {
-        Map<Integer, Integer> map =
-                LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
-        assertThat(map.keySet()).containsExactlyElementsOf(LARGE_LIST);
-        map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
-    }
+    @Nested
+    class ToImmutableMap {
 
-    @Test
-    public void test_immutable_map_duplicate_keys() {
-        Stream<Integer> stream = Stream.of(1, 1);
-        assertThatThrownBy(() -> stream.collect(MoreCollectors.toImmutableMap(k -> k, _k -> 2)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Multiple entries with same key: 1=2 and 1=2");
+        @Test
+        void toImmutableMap_preserves_iteration_order() {
+            Map<Integer, Integer> map = LARGE_LIST.stream()
+                    .map(i -> Maps.immutableEntry(i, valueMap.apply(i)))
+                    .collect(MoreCollectors.toImmutableMap());
+            assertThat(map.keySet()).containsExactlyElementsOf(LARGE_LIST);
+            map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
+        }
+
+        @Test
+        public void toImmutableMap_throws_on_duplicate_keys() {
+            AtomicInteger counter = new AtomicInteger(888);
+            Stream<Map.Entry<Integer, Integer>> stream =
+                    Stream.of(1, 1).map(i -> Maps.immutableEntry(i, counter.getAndIncrement()));
+
+            assertThatThrownBy(() -> stream.collect(MoreCollectors.toImmutableMap()))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Multiple entries with same key: 1=889 and 1=888");
+        }
     }
 }
