@@ -62,10 +62,10 @@ public final class MoreCollectors {
     }
 
     /**
-     * Collect a Stream of Map.Entry (e.g. a StreamEx EntryStream) into a Guava ImmutableMap, which preserves iteration
-     * order. Duplicate keys will result in an error.
+     * Collect a Stream of Map.Entry (e.g. a StreamEx EntryStream) into a Guava {@link ImmutableMap}, which preserves
+     * iteration order. Duplicate keys will result in an error. Throws NullPointerException if any key or value is null.
      *
-     * This is just a convenience method for Guava's built-in {@link ImmutableMap#toImmutableMap}.
+     * For behaviour details, see docs on {@link ImmutableMap#toImmutableMap}.
      *
      * Beware that {@code EntryStream#toImmutableMap()} does NOT preserve iteration order, as it uses a regular HashMap.
      */

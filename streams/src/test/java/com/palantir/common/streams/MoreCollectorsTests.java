@@ -112,5 +112,19 @@ public class MoreCollectorsTests {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Multiple entries with same key: 1=889 and 1=888");
         }
+
+        @Test
+        void throws_if_keys_are_null() {
+            assertThatThrownBy(() -> Stream.of(Maps.immutableEntry(null, 1)).collect(MoreCollectors.toImmutableMap()))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("null key in entry: null=1");
+        }
+
+        @Test
+        void throws_if_values_are_null() {
+            assertThatThrownBy(() -> Stream.of(Maps.immutableEntry(1, null)).collect(MoreCollectors.toImmutableMap()))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("null value in entry: 1=null");
+        }
     }
 }
