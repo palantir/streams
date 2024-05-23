@@ -76,6 +76,27 @@ public final class MoreStreams {
     }
 
     /**
+     * Given a stream of arguments and a Function mapper to a listenable future, this function will return a blocking
+     * stream of the completed futures in completion order, looking at most {@code maxParallelism} arguments ahead in
+     * the stream.
+     *
+     * The function mapper must return a listenable future of the return type. Note that calls to the function mapper
+     * will be made serially.
+     *
+     * Note: the resulting stream may contain results in a different order than the input arguments. To receive results
+     * in the same order as input arguments, use {@link #blockingStreamWithParallelism(Stream, Function, Executor, int)}.
+     */
+    public static <U, V, F extends ListenableFuture<V>> Stream<V> inCompletionOrder(
+            Stream<U> arguments, Function<U, F> mapper, int maxParallelism) {
+        return StreamSupport.stream(
+                        new BufferingSpliterator<>(
+                                InCompletionOrder.INSTANCE, arguments.spliterator(), mapper, maxParallelism),
+                        NOT_PARALLEL)
+                .onClose(arguments::close)
+                .map(Futures::getUnchecked);
+    }
+
+    /**
      * This function will return a blocking stream that waits for each future to complete before returning it,
      * but which looks ahead {@code maxParallelism} futures to ensure a fixed parallelism rate.
      *
