@@ -66,3 +66,25 @@ the order in which they complete.
 [ListenableFuture]: https://google.github.io/guava/releases/23.0/api/docs/com/google/common/util/concurrent/ListenableFuture.html
 [Map]: https://docs.oracle.com/javase/8/docs/api/java/util/Map.html
 [Stream]: https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html
+
+## MoreCollectors
+
+### `MoreCollectors.toImmutableMap()`
+
+Collect a Stream of Map.Entry (e.g. a StreamEx EntryStream) into a Guava ImmutableMap, which preserves iteration order.
+
+Beware that using StreamEx's `EntryStream#toImmutableMap()` does NOT preserve iteration order, as it uses a regular HashMap under the hood.
+
+```diff
+ StreamEx.of(items)
+        .mapToEntry(
+                key -> computeValue(key.foo())
+-       .toImmutableMap() // does not preserve iteration order
++       .collect(MoreCollectors.toImmutableMap()); // preserves iteration order
+```
+
+This is equivalent to writing out the slightly more verbose:
+
+```java
+        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+```

@@ -62,6 +62,18 @@ public final class MoreCollectors {
     }
 
     /**
+     * Collect a Stream of Map.Entry (e.g. a StreamEx EntryStream) into a Guava {@link ImmutableMap}, which preserves
+     * iteration order. Duplicate keys will result in an error. Throws NullPointerException if any key or value is null.
+     *
+     * For behaviour details, see docs on {@link ImmutableMap#toImmutableMap}.
+     *
+     * Beware that {@code EntryStream#toImmutableMap()} does NOT preserve iteration order, as it uses a regular HashMap.
+     */
+    public static <K, V> Collector<Map.Entry<K, V>, ?, ImmutableMap<K, V>> toImmutableMap() {
+        return ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue);
+    }
+
+    /**
      * This collector has similar semantics to {@link Collectors#toMap} except that the resulting map will be
      * immutable. Duplicate keys will result in an error.
      *
