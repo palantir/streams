@@ -147,6 +147,23 @@ public class MoreStreamsTests {
     }
 
     @Test
+    public void testBlockingStreamWithParallelism_transformWithFutureSupplier() throws InterruptedException {
+        ListeningExecutorService executorService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(2));
+        UnaryOperator<Integer> reorder = reorder();
+        Function<Integer, ListenableFuture<Integer>> futureSupplier =
+                i -> executorService.submit(() -> reorder.apply(i));
+        // due to size of thread pool, 1 must finish before 0, but 0 will return first.
+        try (Stream<Integer> integerStream = MoreStreams.blockingStreamWithParallelism(
+                IntStream.range(0, 3).boxed().onClose(() -> streamClosed.set(true)), futureSupplier, 3)) {
+            assertThat(integerStream.collect(toList())).containsExactly(0, 1, 2);
+        } finally {
+            executorService.shutdown();
+            executorService.awaitTermination(1, TimeUnit.SECONDS);
+        }
+        assertThat(streamClosed).isTrue();
+    }
+
+    @Test
     public void testConcurrencySimpleStream() throws InterruptedException {
         testConcurrency(IntStream.range(0, 3).boxed());
     }

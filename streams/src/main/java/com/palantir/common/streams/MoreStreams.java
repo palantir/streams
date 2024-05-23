@@ -137,6 +137,28 @@ public final class MoreStreams {
     }
 
     /**
+     * Given a stream of arguments and a Function mapper to a listenable future, this function will return a blocking
+     * stream that waits for each future to complete before returning it, but which looks ahead {@code maxParallelism}
+     * arguments to ensure a fixed parallelism rate.
+     *
+     * The function mapper must return a listenable future of the return type. Note that calls to the function mapper
+     * will be made serially.
+     */
+    public static <U, V, F extends ListenableFuture<V>> Stream<V> blockingStreamWithParallelism(
+            Stream<U> arguments, Function<U, F> mapper,  int maxParallelism) {
+        return StreamSupport.stream(
+                        new BufferingSpliterator<>(
+                                InSourceOrder.INSTANCE,
+                                arguments.spliterator(),
+                                mapper,
+                                maxParallelism),
+                        NOT_PARALLEL)
+                .onClose(arguments::close)
+                .map(MoreFutures::blockUntilCompletion)
+                .map(Futures::getUnchecked);
+    }
+
+    /**
      * Returns a stream of the values returned by {@code iterable}.
      *
      * @deprecated Use {@link com.google.common.collect.Streams#stream(Iterable)}, available in Guava 21+
