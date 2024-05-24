@@ -145,13 +145,10 @@ public final class MoreStreams {
      * will be made serially.
      */
     public static <U, V, F extends ListenableFuture<V>> Stream<V> blockingStreamWithParallelism(
-            Stream<U> arguments, Function<U, F> mapper,  int maxParallelism) {
+            Stream<U> arguments, Function<U, F> mapper, int maxParallelism) {
         return StreamSupport.stream(
                         new BufferingSpliterator<>(
-                                InSourceOrder.INSTANCE,
-                                arguments.spliterator(),
-                                mapper,
-                                maxParallelism),
+                                InSourceOrder.INSTANCE, arguments.spliterator(), mapper, maxParallelism),
                         NOT_PARALLEL)
                 .onClose(arguments::close)
                 .map(MoreFutures::blockUntilCompletion)
