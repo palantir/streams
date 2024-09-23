@@ -17,3 +17,6 @@
 .gradle/
 build/
 bin/
+
+# Gradle JDKs setup
+!gradle/*
