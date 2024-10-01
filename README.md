@@ -6,8 +6,8 @@
 Utilities for working with [Java 8 streams][Stream]. [KeyedStream](#keyedstream) makes
 working with streams of Map entries readable.
 
-[![CircleCI Build Status](https://circleci.com/gh/palantir/streams/tree/master.svg)](https://circleci.com/gh/palantir/streams)
-[![Download](https://api.bintray.com/packages/palantir/releases/streams/images/download.svg) ](https://bintray.com/palantir/releases/streams/_latestVersion)
+[![CircleCI Build Status](https://circleci.com/gh/palantir/streams/tree/develop.svg)](https://circleci.com/gh/palantir/streams)
+[![Download](https://img.shields.io/maven-central/v/com.palantir.common/streams) ](https://central.sonatype.com/artifact/com.palantir.common/streams/)
 
 
 ## KeyedStream
