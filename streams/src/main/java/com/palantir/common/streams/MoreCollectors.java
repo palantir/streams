@@ -18,6 +18,8 @@ package com.palantir.common.streams;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +31,26 @@ import java.util.stream.Collectors;
  * Java 8 {@link Collector} for immutable collections.
  */
 public final class MoreCollectors {
+
+    /**
+     * This collector has similar semantics to {@link Collectors#toSet()}; however,
+     * the builder will be presized with the expected size to avoid resizing while collecting.
+     */
+    public static <T> Collector<T, ?, Set<T>> toSetWithExpectedSize(int expectedSize) {
+        return Collectors.toCollection(() -> Sets.newLinkedHashSetWithExpectedSize(expectedSize));
+    }
+
+    /**
+     * This collector has similar semantics to {@link ImmutableSet#toImmutableSet()}; however,
+     * the builder will be presized with the expected size to avoid resizing while collecting.
+     */
+    public static <T> Collector<T, ?, ImmutableSet<T>> toImmutableSetWithExpectedSize(int expectedSize) {
+        return Collector.of(
+                () -> ImmutableSet.<T>builderWithExpectedSize(expectedSize),
+                ImmutableSet.Builder::add,
+                (left, right) -> left.addAll(right.build()),
+                ImmutableSet.Builder::build);
+    }
 
     /**
      * This collector has similar semantics to {@link Collectors#toSet} except that the resulting set will be
@@ -44,6 +66,26 @@ public final class MoreCollectors {
                 (left, right) -> left.addAll(right.build()),
                 ImmutableSet.Builder::build,
                 Collector.Characteristics.UNORDERED);
+    }
+
+    /**
+     * This collector has similar semantics to {@link Collectors#toList()}; however,
+     * the builder will be presized with the expected size to avoid resizing while collecting.
+     */
+    public static <T> Collector<T, ?, List<T>> toListWithExpectedSize(int expectedSize) {
+        return Collectors.toCollection(() -> new ArrayList<>(expectedSize));
+    }
+
+    /**
+     * This collector has similar semantics to {@link ImmutableList#toImmutableList()}; however,
+     * the builder will be presized with the expected size to avoid resizing while collecting.
+     */
+    public static <T> Collector<T, ?, ImmutableList<T>> toImmutableListWithExpectedSize(int expectedSize) {
+        return Collector.of(
+                () -> ImmutableList.<T>builderWithExpectedSize(expectedSize),
+                ImmutableList.Builder::add,
+                (left, right) -> left.addAll(right.build()),
+                ImmutableList.Builder::build);
     }
 
     /**
@@ -84,6 +126,20 @@ public final class MoreCollectors {
             Function<T, K> keyFunction, Function<T, V> valueFunction) {
         return Collector.of(
                 ImmutableMap::<K, V>builder,
+                (builder, value) -> builder.put(keyFunction.apply(value), valueFunction.apply(value)),
+                (left, right) -> left.putAll(right.buildOrThrow()),
+                ImmutableMap.Builder::build);
+    }
+
+    /**
+     * This collector has similar semantics to {@link ImmutableMap#toImmutableMap(Function, Function)}; however,
+     * the builder will be presized with the expected size to avoid resizing while collecting.
+     * Duplicate keys will result in an error.
+     */
+    public static <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMapWithExpectedSize(
+            int expectedSize, Function<T, K> keyFunction, Function<T, V> valueFunction) {
+        return Collector.of(
+                () -> ImmutableMap.<K, V>builderWithExpectedSize(expectedSize),
                 (builder, value) -> builder.put(keyFunction.apply(value), valueFunction.apply(value)),
                 (left, right) -> left.putAll(right.buildOrThrow()),
                 ImmutableMap.Builder::build);
