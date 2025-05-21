@@ -3,4 +3,4 @@ com.google.guava:guava = 33.4.8-jre
 org.assertj:* = 3.27.3
 org.junit.jupiter:* = 5.12.2
 org.junit.platform:* = 1.12.2
-org.mockito:* = 5.17.0
+org.mockito:* = 5.18.0
