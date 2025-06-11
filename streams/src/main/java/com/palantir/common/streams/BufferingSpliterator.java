@@ -44,6 +44,7 @@ class BufferingSpliterator<T, F extends ListenableFuture<T>, U> implements Split
         this.toFuture = toFuture;
     }
 
+    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     @Override
     public boolean tryAdvance(Consumer<? super F> action) {
         startNewWorkIfNecessary();
