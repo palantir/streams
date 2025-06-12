@@ -89,7 +89,6 @@ public class KeyedStreamTests {
 
     @Test
     public void test_can_collect_keys() {
-        @SuppressWarnings("for-rollout:PreferredInterfaceType")
         Set<String> keys = ImmutableSet.of("first", "second");
 
         Map<String, Integer> map = KeyedStream.of(keys).map(String::length).collectToMap();
@@ -100,7 +99,6 @@ public class KeyedStreamTests {
 
     @Test
     public void test_can_collect_values() {
-        @SuppressWarnings("for-rollout:PreferredInterfaceType")
         Set<String> values = ImmutableSet.of("first", "second");
 
         Map<Integer, String> map =
@@ -144,7 +142,6 @@ public class KeyedStreamTests {
 
     @Test
     public void test_for_each_entry() {
-        @SuppressWarnings("for-rollout:PreferredInterfaceType")
         List<Integer> values = ImmutableList.of(1, 2, 3);
         List<Integer> result = new ArrayList<>();
 

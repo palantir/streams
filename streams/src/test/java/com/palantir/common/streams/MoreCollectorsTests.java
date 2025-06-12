@@ -95,7 +95,6 @@ public class MoreCollectorsTests {
 
         @Test
         void toImmutableMap_preserves_iteration_order() {
-            @SuppressWarnings("for-rollout:PreferredInterfaceType")
             Map<Integer, Integer> map = LARGE_LIST.stream()
                     .map(i -> Maps.immutableEntry(i, valueMap.apply(i)))
                     .collect(MoreCollectors.toImmutableMap());
