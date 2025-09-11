@@ -228,6 +228,7 @@ public interface KeyedStream<K, V> {
     /**
      * Returns a keyed stream with matching keys and values taken from {@code items}.
      */
+    @SuppressWarnings("for-rollout:deprecation")
     static <V> KeyedStream<V, V> of(Iterable<? extends V> items) {
         return KeyedStream.of(MoreStreams.stream(items));
     }

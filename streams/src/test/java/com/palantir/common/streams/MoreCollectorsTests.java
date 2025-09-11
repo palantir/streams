@@ -37,6 +37,7 @@ public class MoreCollectorsTests {
 
     @Test
     public void test_immutable_list() {
+        @SuppressWarnings("for-rollout:deprecation")
         List<Integer> list = LARGE_LIST.stream().collect(MoreCollectors.toImmutableList());
         assertThat(list).containsExactlyElementsOf(LARGE_LIST);
     }
@@ -44,12 +45,14 @@ public class MoreCollectorsTests {
     @Test
     @SuppressWarnings("DangerousParallelStreamUsage") // explicitly testing parallel streams
     public void test_parallel_immutable_list() {
+        @SuppressWarnings("for-rollout:deprecation")
         List<Integer> list = LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableList());
         assertThat(list).containsExactlyElementsOf(LARGE_LIST);
     }
 
     @Test
     public void test_immutable_set() {
+        @SuppressWarnings("for-rollout:deprecation")
         Set<Integer> set = LARGE_LIST.stream().collect(MoreCollectors.toImmutableSet());
         assertThat(set).containsExactlyElementsOf(LARGE_LIST);
     }
@@ -57,6 +60,7 @@ public class MoreCollectorsTests {
     @Test
     @SuppressWarnings("DangerousParallelStreamUsage") // explicitly testing parallel streams
     public void test_parallel_immutable_set() {
+        @SuppressWarnings("for-rollout:deprecation")
         Set<Integer> set = LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableSet());
         assertThat(set).containsExactlyElementsOf(LARGE_LIST);
     }
@@ -67,6 +71,7 @@ public class MoreCollectorsTests {
     class ToImmutableMapDeprecated {
         @Test
         public void test_immutable_map() {
+            @SuppressWarnings("for-rollout:deprecation")
             Map<Integer, Integer> map = LARGE_LIST.stream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
             assertThat(map.keySet()).containsExactlyElementsOf(LARGE_LIST);
             map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
@@ -75,12 +80,14 @@ public class MoreCollectorsTests {
         @Test
         @SuppressWarnings("DangerousParallelStreamUsage") // explicitly testing parallel streams
         public void test_parallel_immutable_map() {
+            @SuppressWarnings("for-rollout:deprecation")
             Map<Integer, Integer> map =
                     LARGE_LIST.parallelStream().collect(MoreCollectors.toImmutableMap(k -> k, valueMap));
             assertThat(map.keySet()).containsExactlyElementsOf(LARGE_LIST);
             map.forEach((k, _v) -> assertThat(map.get(k)).isEqualTo(valueMap.apply(k)));
         }
 
+        @SuppressWarnings("for-rollout:deprecation")
         @Test
         public void test_immutable_map_duplicate_keys() {
             Stream<Integer> stream = Stream.of(1, 1);
