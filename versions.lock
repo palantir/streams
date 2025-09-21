@@ -1,14 +1,14 @@
 # Run ./gradlew writeVersionsLocks to regenerate this file. Blank lines are to minimize merge conflicts.
 
-com.google.errorprone:error_prone_annotations:2.36.0 (1 constraints: 4d0a49bf)
+com.google.errorprone:error_prone_annotations:2.41.0 (1 constraints: 490a3ebf)
 
 com.google.guava:failureaccess:1.0.3 (1 constraints: 160ae3b4)
 
-com.google.guava:guava:33.4.8-jre (1 constraints: b206a153)
+com.google.guava:guava:33.5.0-jre (1 constraints: ab068053)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
-com.google.j2objc:j2objc-annotations:3.0.0 (1 constraints: 150aeab4)
+com.google.j2objc:j2objc-annotations:3.1 (1 constraints: b809f1a0)
 
 org.jspecify:jspecify:1.0.0 (1 constraints: 130ae0b4)
 
@@ -16,13 +16,13 @@ org.jspecify:jspecify:1.0.0 (1 constraints: 130ae0b4)
 
 [Test dependencies]
 
-net.bytebuddy:byte-buddy:1.17.6 (2 constraints: c716ff4f)
+net.bytebuddy:byte-buddy:1.17.7 (2 constraints: 9f161b3f)
 
-net.bytebuddy:byte-buddy-agent:1.17.6 (1 constraints: 490b4dde)
+net.bytebuddy:byte-buddy-agent:1.17.7 (1 constraints: 4a0b4ede)
 
 org.apiguardian:apiguardian-api:1.1.2 (6 constraints: 5366ce6e)
 
-org.assertj:assertj-core:3.27.4 (1 constraints: 4205523b)
+org.assertj:assertj-core:3.27.5 (1 constraints: 4305533b)
 
 org.junit.jupiter:junit-jupiter:5.13.4 (1 constraints: 7e074077)
 
@@ -38,9 +38,9 @@ org.junit.platform:junit-platform-engine:1.13.4 (2 constraints: 5123de45)
 
 org.junit.platform:junit-platform-launcher:1.13.4 (1 constraints: 3b05363b)
 
-org.mockito:mockito-core:5.19.0 (2 constraints: 3a14bf87)
+org.mockito:mockito-core:5.20.0 (2 constraints: 2a143986)
 
-org.mockito:mockito-junit-jupiter:5.19.0 (1 constraints: 41055c3b)
+org.mockito:mockito-junit-jupiter:5.20.0 (1 constraints: 3905453b)
 
 org.objenesis:objenesis:3.3 (1 constraints: b20a14bd)
 
