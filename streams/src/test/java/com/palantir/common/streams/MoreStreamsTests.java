@@ -84,7 +84,6 @@ public class MoreStreamsTests {
     @SuppressWarnings("DoNotCall")
     @Test
     public void testInCompletionOrder_future() {
-        @SuppressWarnings("for-rollout:deprecation")
         Stream<SettableFuture<String>> completedFutureStream = MoreStreams.inCompletionOrder(stream, 3);
         assertThat(completedFutureStream).containsExactly(secondInSource, firstInSource);
         assertThat(streamClosed).isTrue();
@@ -93,7 +92,6 @@ public class MoreStreamsTests {
     @SuppressWarnings("DoNotCall")
     @Test
     public void testBlockingStreamWithParallelism_future() {
-        @SuppressWarnings("for-rollout:deprecation")
         Stream<SettableFuture<String>> completedFutureStream = MoreStreams.blockingStreamWithParallelism(stream, 3);
         assertThat(completedFutureStream).containsExactly(firstInSource, secondInSource);
         assertThat(streamClosed).isTrue();
