@@ -1,5 +1,5 @@
 com.google.guava:guava = 33.5.0-jre
 org.assertj:* = 3.27.6
-org.junit.jupiter:* = 6.0.0
-org.junit.platform:* = 6.0.0
+org.junit.jupiter:* = 6.0.1
+org.junit.platform:* = 6.0.1
 org.mockito:* = 5.20.0
