@@ -23,13 +23,18 @@ import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NavigableSet;
+import java.util.RandomAccess;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.Vector;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -145,11 +150,12 @@ class MoreIterablesTest {
             assertThat(MoreIterables.partition(set, partitionSize))
                     .hasSize(3)
                     .asInstanceOf(iterable(Object.class))
-                    .allSatisfy(batch -> assertThat(batch)
-                            .asInstanceOf(list(Integer.class))
-                            .hasSizeLessThanOrEqualTo(partitionSize)
-                            .satisfies(allElements::addAll));
-
+                    .allSatisfy(batch -> {
+                        assertThat(batch).asInstanceOf(list(Integer.class)).satisfies(ints -> {
+                            assertThat(ints).hasSizeLessThanOrEqualTo(partitionSize);
+                            allElements.addAll(ints);
+                        });
+                    });
             assertThat(allElements).containsExactlyInAnyOrderElementsOf(set);
         }
 
@@ -164,8 +170,11 @@ class MoreIterablesTest {
                     .asInstanceOf(iterable(Object.class))
                     .allSatisfy(batch -> assertThat(batch)
                             .asInstanceOf(list(String.class))
-                            .hasSizeLessThanOrEqualTo(partitionSize)
-                            .satisfies(allElements::addAll));
+                            .satisfies(strings -> {
+                                assertThat(strings).hasSizeLessThanOrEqualTo(partitionSize);
+                                allElements.addAll(strings);
+                            }));
+            assertThat(allElements).containsExactlyInAnyOrderElementsOf(set);
         }
 
         @Test
@@ -287,6 +296,245 @@ class MoreIterablesTest {
             result.forEach(secondIteration::add);
 
             assertThat(firstIteration).isEqualTo(secondIteration);
+        }
+    }
+
+    @Nested
+    class InvalidInputTests {
+
+        @Test
+        void shouldThrowExceptionForZeroPartitionSize() {
+            assertThatThrownBy(() -> MoreIterables.partition(List.of(1, 2, 3), 0))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void shouldThrowExceptionForNegativePartitionSize() {
+            assertThatThrownBy(() -> MoreIterables.partition(List.of(1, 2, 3), -1))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void shouldThrowExceptionForNullIterable() {
+            assertThatThrownBy(() -> MoreIterables.partition(null, 3)).isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
+    class RandomAccessTests {
+
+        @Test
+        void shouldReturnRandomAccessListsForArrayList() {
+            List<Integer> arrayList = new ArrayList<>(List.of(1, 2, 3, 4, 5));
+
+            MoreIterables.partition(arrayList, 2).forEach(partition -> {
+                assertThat(partition).isInstanceOf(RandomAccess.class);
+            });
+        }
+
+        @Test
+        @SuppressWarnings("JdkObsolete") // explicitly testing Vector
+        void shouldReturnRandomAccessListsForVector() {
+            Vector<String> vector = new Vector<>(List.of("a", "b", "c", "d"));
+
+            MoreIterables.partition(vector, 2).forEach(partition -> {
+                assertThat(partition).isInstanceOf(RandomAccess.class);
+            });
+        }
+
+        @Test
+        @SuppressWarnings("JdkObsolete") // explicitly testing LinkedList
+        void shouldNotReturnRandomAccessListsForLinkedList() {
+            List<Integer> linkedList = new LinkedList<>(List.of(1, 2, 3, 4));
+
+            // LinkedList doesn't implement RandomAccess, so partitions shouldn't either
+            MoreIterables.partition(linkedList, 2).forEach(partition -> {
+                assertThat(partition).isNotInstanceOf(RandomAccess.class);
+            });
+        }
+
+        @Test
+        void shouldReturnRandomAccessListsForImmutableList() {
+            ImmutableList<Integer> immutableList = ImmutableList.of(1, 2, 3, 4, 5, 6);
+
+            MoreIterables.partition(immutableList, 2).forEach(partition -> {
+                assertThat(partition).isInstanceOf(RandomAccess.class);
+            });
+        }
+    }
+
+    @Nested
+    class AdditionalCollectionTypeTests {
+
+        @Test
+        void shouldPartitionTreeSet() {
+            NavigableSet<Integer> treeSet = new TreeSet<>(List.of(5, 2, 8, 1, 9, 3, 7));
+            int partitionSize = 3;
+
+            List<Integer> allElements = new ArrayList<>();
+            assertThat(MoreIterables.partition(treeSet, partitionSize))
+                    .hasSize(3)
+                    .asInstanceOf(iterable(Object.class))
+                    .allSatisfy(batch -> assertThat(batch)
+                            .asInstanceOf(list(Integer.class))
+                            .hasSizeLessThanOrEqualTo(partitionSize)
+                            .satisfies(allElements::addAll));
+
+            // TreeSet maintains sorted order
+            assertThat(allElements).containsExactly(1, 2, 3, 5, 7, 8, 9);
+        }
+
+        @Test
+        void shouldPartitionArrayDeque() {
+            ArrayDeque<String> deque = new ArrayDeque<>(List.of("a", "b", "c", "d", "e"));
+            int partitionSize = 2;
+
+            List<String> allElements = new ArrayList<>();
+            assertThat(MoreIterables.partition(deque, partitionSize))
+                    .hasSize(3)
+                    .asInstanceOf(iterable(Object.class))
+                    .allSatisfy(batch -> assertThat(batch)
+                            .asInstanceOf(list(String.class))
+                            .hasSizeLessThanOrEqualTo(partitionSize)
+                            .satisfies(allElements::addAll));
+
+            assertThat(allElements).containsExactlyElementsOf(deque);
+        }
+
+        @Test
+        @SuppressWarnings("JdkObsolete") // explicitly testing Vector
+        void shouldPartitionVector() {
+            Vector<Integer> vector = new Vector<>(List.of(10, 20, 30, 40, 50, 60, 70));
+
+            assertThat(MoreIterables.partition(vector, 3))
+                    .hasSize(3)
+                    .isEqualTo(List.of(List.of(10, 20, 30), List.of(40, 50, 60), List.of(70)));
+        }
+
+        @Test
+        void shouldPartitionSmallTreeSet() {
+            NavigableSet<String> treeSet = new TreeSet<>(List.of("b", "a"));
+
+            assertThat(MoreIterables.partition(treeSet, 5)).hasSize(1).allSatisfy(partition -> assertThat(partition)
+                    .asInstanceOf(list(String.class))
+                    .containsExactly("a", "b"));
+        }
+
+        @Test
+        void shouldPartitionArrayDequeSmallerThanPartitionSize() {
+            ArrayDeque<Integer> deque = new ArrayDeque<>(List.of(1, 2));
+
+            assertThat(MoreIterables.partition(deque, 10)).hasSize(1).allSatisfy(partition -> assertThat(partition)
+                    .asInstanceOf(list(Integer.class))
+                    .containsExactly(1, 2));
+        }
+    }
+
+    @Nested
+    class LargerDatasetTests {
+
+        @Test
+        void shouldPartitionLargeList() {
+            List<Integer> largeList = new ArrayList<>();
+            for (int i = 0; i < 1000; i++) {
+                largeList.add(i);
+            }
+
+            Iterable<? extends List<Integer>> partitions = MoreIterables.partition(largeList, 100);
+
+            assertThat(partitions).hasSize(10);
+
+            int index = 0;
+            for (List<Integer> partition : partitions) {
+                assertThat(partition).hasSize(100);
+                for (int value : partition) {
+                    assertThat(value).isEqualTo(index++);
+                }
+            }
+        }
+
+        @Test
+        void shouldPartitionLargeListWithRemainder() {
+            List<String> largeList = new ArrayList<>();
+            for (int i = 0; i < 1547; i++) {
+                largeList.add("item-" + i);
+            }
+
+            Iterable<? extends List<String>> partitions = MoreIterables.partition(largeList, 200);
+
+            assertThat(partitions).hasSize(8);
+
+            List<String> allElements = new ArrayList<>();
+            partitions.forEach(allElements::addAll);
+
+            assertThat(allElements).isEqualTo(largeList);
+        }
+
+        @Test
+        void shouldPartitionLargeImmutableList() {
+            ImmutableList.Builder<Integer> builder = ImmutableList.builder();
+            for (int i = 0; i < 500; i++) {
+                builder.add(i);
+            }
+            ImmutableList<Integer> immutableList = builder.build();
+
+            assertThat(MoreIterables.partition(immutableList, 50)).hasSize(10);
+        }
+
+        @Test
+        void shouldPartitionLargeHashSet() {
+            Set<Integer> largeSet = new HashSet<>();
+            for (int i = 0; i < 750; i++) {
+                largeSet.add(i);
+            }
+
+            Iterable<? extends List<Integer>> partitions = MoreIterables.partition(largeSet, 100);
+
+            List<Integer> allElements = new ArrayList<>();
+            partitions.forEach(allElements::addAll);
+
+            assertThat(allElements).containsExactlyInAnyOrderElementsOf(largeSet);
+        }
+    }
+
+    @Nested
+    class SpecificCodePathTests {
+
+        @Test
+        void shouldUseArrayListPathForNonListCollection() {
+            // This specifically tests the collection.size() <= size path for non-list collections
+            // which creates an ArrayList from the collection
+            Set<String> smallSet = new HashSet<>(List.of("x", "y", "z"));
+
+            Iterable<? extends List<String>> result = MoreIterables.partition(smallSet, 10);
+
+            assertThat(result).hasSize(1);
+            List<String> partition = result.iterator().next();
+            assertThat(partition).containsExactlyInAnyOrderElementsOf(smallSet);
+            assertThatThrownBy(() -> partition.add("new")).isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        void shouldUseFallbackPathForNonCollectionIterable() {
+            // Custom iterable that is not a Collection
+            Iterable<Integer> customIterable = () -> List.of(1, 2, 3, 4, 5).iterator();
+
+            List<Integer> allElements = new ArrayList<>();
+            assertThat(MoreIterables.partition(customIterable, 2)).hasSize(3).allSatisfy(batch -> assertThat(batch)
+                    .asInstanceOf(list(Integer.class))
+                    .satisfies(ints -> {
+                        assertThat(ints).hasSizeBetween(1, 2);
+                        allElements.addAll(ints);
+                    }));
+            assertThat(allElements).containsExactly(1, 2, 3, 4, 5);
+        }
+
+        @Test
+        void shouldHandleEmptyIteratorCorrectly() {
+            Iterable<? extends List<String>> emptyPartition = MoreIterables.partition(List.of(), 5);
+
+            Iterator<? extends List<String>> iterator = emptyPartition.iterator();
+            assertThat(iterator.hasNext()).isFalse();
         }
     }
 }
