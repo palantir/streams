@@ -105,7 +105,7 @@ class MoreIterablesTest {
         @Test
         @SuppressWarnings("JdkObsolete") // explicitly testing LinkedList
         void shouldHandleLinkedList() {
-            assertThat(MoreIterables.partition(new LinkedList<String>(List.of("x", "y", "z", "w")), 2))
+            assertThat(MoreIterables.partition(new LinkedList<>(List.of("x", "y", "z", "w")), 2))
                     .hasSize(2)
                     .isEqualTo(List.of(List.of("x", "y"), List.of("z", "w")));
         }
@@ -150,12 +150,12 @@ class MoreIterablesTest {
             assertThat(MoreIterables.partition(set, partitionSize))
                     .hasSize(3)
                     .asInstanceOf(iterable(Object.class))
-                    .allSatisfy(batch -> {
-                        assertThat(batch).asInstanceOf(list(Integer.class)).satisfies(ints -> {
-                            assertThat(ints).hasSizeLessThanOrEqualTo(partitionSize);
-                            allElements.addAll(ints);
-                        });
-                    });
+                    .allSatisfy(batch -> assertThat(batch)
+                            .asInstanceOf(list(Integer.class))
+                            .satisfies(ints -> {
+                                assertThat(ints).hasSizeLessThanOrEqualTo(partitionSize);
+                                allElements.addAll(ints);
+                            }));
             assertThat(allElements).containsExactlyInAnyOrderElementsOf(set);
         }
 
@@ -327,9 +327,8 @@ class MoreIterablesTest {
         void shouldReturnRandomAccessListsForArrayList() {
             List<Integer> arrayList = new ArrayList<>(List.of(1, 2, 3, 4, 5));
 
-            MoreIterables.partition(arrayList, 2).forEach(partition -> {
-                assertThat(partition).isInstanceOf(RandomAccess.class);
-            });
+            assertThat(MoreIterables.partition(arrayList, 2))
+                    .allSatisfy(partition -> assertThat(partition).isInstanceOf(RandomAccess.class));
         }
 
         @Test
@@ -337,9 +336,8 @@ class MoreIterablesTest {
         void shouldReturnRandomAccessListsForVector() {
             Vector<String> vector = new Vector<>(List.of("a", "b", "c", "d"));
 
-            MoreIterables.partition(vector, 2).forEach(partition -> {
-                assertThat(partition).isInstanceOf(RandomAccess.class);
-            });
+            assertThat(MoreIterables.partition(vector, 2))
+                    .allSatisfy(partition -> assertThat(partition).isInstanceOf(RandomAccess.class));
         }
 
         @Test
@@ -348,18 +346,16 @@ class MoreIterablesTest {
             List<Integer> linkedList = new LinkedList<>(List.of(1, 2, 3, 4));
 
             // LinkedList doesn't implement RandomAccess, so partitions shouldn't either
-            MoreIterables.partition(linkedList, 2).forEach(partition -> {
-                assertThat(partition).isNotInstanceOf(RandomAccess.class);
-            });
+            assertThat(MoreIterables.partition(linkedList, 2))
+                    .allSatisfy(partition -> assertThat(partition).isNotInstanceOf(RandomAccess.class));
         }
 
         @Test
         void shouldReturnRandomAccessListsForImmutableList() {
             ImmutableList<Integer> immutableList = ImmutableList.of(1, 2, 3, 4, 5, 6);
 
-            MoreIterables.partition(immutableList, 2).forEach(partition -> {
-                assertThat(partition).isInstanceOf(RandomAccess.class);
-            });
+            assertThat(MoreIterables.partition(immutableList, 2))
+                    .allSatisfy(partition -> assertThat(partition).isInstanceOf(RandomAccess.class));
         }
     }
 

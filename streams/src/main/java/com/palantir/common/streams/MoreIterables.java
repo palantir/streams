@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public final class MoreIterables {
@@ -46,19 +47,20 @@ public final class MoreIterables {
      * @param size the desired size of each sublist (the last may be smaller)
      * @return an iterable of unmodifiable lists containing the elements of {@code iterable} divided into partitions
      */
-    public static <T extends @Nullable Object> Iterable<? extends List<T>> partition(Iterable<T> items, int size) {
+    public static <T extends @Nullable Object> Iterable<List<T>> partition(Iterable<T> items, int size) {
         if (items instanceof Collection<T> collection) {
             // use Lists.partition if possible, which will return sublist without allocating entire
             // array of partition size.
             if (collection.isEmpty()) {
                 return ImmutableList.of();
             }
-            if (collection instanceof ImmutableCollection<T> immutableCollection) {
+            if (collection instanceof ImmutableCollection<@NonNull T> immutableCollection) {
                 // immutable collections have an internal list that can be partitioned without allocating sublists
                 return Lists.partition(immutableCollection.asList(), size);
             }
             if (collection instanceof List<T> list) {
-                return Lists.partition(Collections.unmodifiableList(list), size);
+                return Lists.transform(
+                        Lists.partition(Collections.unmodifiableList(list), size), Collections::unmodifiableList);
             }
             if (collection.size() <= size) {
                 // Iterables.partition pre-allocates array of `size` waste when `items.size()` does not need partitioned
