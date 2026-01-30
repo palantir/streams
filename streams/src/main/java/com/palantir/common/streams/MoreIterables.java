@@ -59,8 +59,7 @@ public final class MoreIterables {
                 return Lists.partition(immutableCollection.asList(), size);
             }
             if (collection instanceof List<T> list) {
-                return Lists.transform(
-                        Lists.partition(Collections.unmodifiableList(list), size), Collections::unmodifiableList);
+                return Lists.transform(Lists.partition(list, size), Collections::unmodifiableList);
             }
             if (collection.size() <= size) {
                 // Iterables.partition pre-allocates array of `size` waste when `items.size()` does not need partitioned
