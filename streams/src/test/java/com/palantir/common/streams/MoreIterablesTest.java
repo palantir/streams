@@ -71,7 +71,7 @@ class MoreIterablesTest {
 
             assertThat(MoreIterables.partition(list, 2))
                     .hasSize(3)
-                    .isEqualTo(List.of(List.of(1, 2), List.of(3, 4), List.of(5, 6)));
+                    .containsExactly(List.of(1, 2), List.of(3, 4), List.of(5, 6));
         }
 
         @Test
@@ -80,26 +80,26 @@ class MoreIterablesTest {
 
             assertThat(MoreIterables.partition(list, 3))
                     .hasSize(2)
-                    .isEqualTo(List.of(List.of("a", "b", "c"), List.of("d", "e")));
+                    .containsExactly(List.of("a", "b", "c"), List.of("d", "e"));
         }
 
         @Test
         void shouldHandleListSmallerThanPartitionSize() {
             List<Integer> list = List.of(1, 2);
 
-            assertThat(MoreIterables.partition(list, 5)).hasSize(1).isEqualTo(List.of(List.of(1, 2)));
+            assertThat(MoreIterables.partition(list, 5)).hasSize(1).containsExactly(List.of(1, 2));
         }
 
         @Test
         void shouldHandleListEqualToPartitionSize() {
             assertThat(MoreIterables.partition(List.of("a", "b", "c"), 3))
                     .hasSize(1)
-                    .isEqualTo(List.of(List.of("a", "b", "c")));
+                    .containsExactly(List.of("a", "b", "c"));
         }
 
         @Test
         void shouldHandleSingleElementList() {
-            assertThat(MoreIterables.partition(List.of(42), 1)).hasSize(1).isEqualTo(List.of(List.of(42)));
+            assertThat(MoreIterables.partition(List.of(42), 1)).hasSize(1).containsExactly(List.of(42));
         }
 
         @Test
@@ -107,7 +107,7 @@ class MoreIterablesTest {
         void shouldHandleLinkedList() {
             assertThat(MoreIterables.partition(new LinkedList<>(List.of("x", "y", "z", "w")), 2))
                     .hasSize(2)
-                    .isEqualTo(List.of(List.of("x", "y"), List.of("z", "w")));
+                    .containsExactly(List.of("x", "y"), List.of("z", "w"));
         }
     }
 
@@ -118,7 +118,7 @@ class MoreIterablesTest {
         void shouldPartitionImmutableList() {
             assertThat(MoreIterables.partition(ImmutableList.of(1, 2, 3, 4, 5), 2))
                     .hasSize(3)
-                    .isEqualTo(List.of(List.of(1, 2), List.of(3, 4), List.of(5)));
+                    .containsExactly(List.of(1, 2), List.of(3, 4), List.of(5));
         }
 
         @Test
@@ -134,7 +134,7 @@ class MoreIterablesTest {
         void shouldHandleImmutableListSmallerThanPartitionSize() {
             assertThat(MoreIterables.partition(ImmutableList.of(1, 2), 10))
                     .hasSize(1)
-                    .isEqualTo(List.of(List.of(1, 2)));
+                    .containsExactly(List.of(1, 2));
         }
     }
 
@@ -204,7 +204,7 @@ class MoreIterablesTest {
                             .asInstanceOf(list(String.class))
                             .hasSizeLessThanOrEqualTo(partitionSize)
                             .satisfies(allElements::addAll));
-            assertThat(allElements).containsExactlyElementsOf(list).isEqualTo(list);
+            assertThat(allElements).containsExactlyElementsOf(list).containsExactlyElementsOf(list);
         }
 
         @Test
@@ -221,7 +221,7 @@ class MoreIterablesTest {
                             .asInstanceOf(list(Integer.class))
                             .hasSizeLessThanOrEqualTo(partitionSize)
                             .satisfies(allElements::addAll));
-            assertThat(allElements).containsExactlyElementsOf(list).isEqualTo(list);
+            assertThat(allElements).containsExactlyElementsOf(list).containsExactlyElementsOf(list);
         }
     }
 
@@ -255,21 +255,21 @@ class MoreIterablesTest {
         void shouldHandlePartitionSizeOfOne() {
             assertThat(MoreIterables.partition(List.of(1, 2, 3), 1))
                     .hasSize(3)
-                    .isEqualTo(List.of(List.of(1), List.of(2), List.of(3)));
+                    .containsExactly(List.of(1), List.of(2), List.of(3));
         }
 
         @Test
         void shouldHandleLargePartitionSize() {
             List<String> list = List.of("a", "b", "c");
 
-            assertThat(MoreIterables.partition(list, 1000)).hasSize(1).isEqualTo(List.of(List.of("a", "b", "c")));
+            assertThat(MoreIterables.partition(list, 1000)).hasSize(1).containsExactly(List.of("a", "b", "c"));
         }
 
         @Test
         void shouldHandleNullElements() {
             assertThat(MoreIterables.partition(Arrays.asList("a", null, "c", null, "e"), 2))
                     .hasSize(3)
-                    .isEqualTo(List.of(Arrays.asList("a", null), Arrays.asList("c", null), List.of("e")));
+                    .containsExactly(Arrays.asList("a", null), Arrays.asList("c", null), List.of("e"));
         }
     }
 
@@ -295,7 +295,7 @@ class MoreIterablesTest {
             List<List<String>> secondIteration = new ArrayList<>();
             result.forEach(secondIteration::add);
 
-            assertThat(firstIteration).isEqualTo(secondIteration);
+            assertThat(firstIteration).containsExactlyElementsOf(secondIteration);
         }
     }
 
@@ -404,7 +404,7 @@ class MoreIterablesTest {
 
             assertThat(MoreIterables.partition(vector, 3))
                     .hasSize(3)
-                    .isEqualTo(List.of(List.of(10, 20, 30), List.of(40, 50, 60), List.of(70)));
+                    .containsExactly(List.of(10, 20, 30), List.of(40, 50, 60), List.of(70));
         }
 
         @Test
@@ -463,7 +463,7 @@ class MoreIterablesTest {
             List<String> allElements = new ArrayList<>();
             partitions.forEach(allElements::addAll);
 
-            assertThat(allElements).isEqualTo(largeList);
+            assertThat(allElements).containsExactlyElementsOf(largeList);
         }
 
         @Test
