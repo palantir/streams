@@ -181,9 +181,11 @@ class MoreIterablesTest {
         void shouldHandleSetEqualToPartitionSize() {
             Set<Integer> set = new HashSet<>(List.of(1, 2, 3));
 
-            assertThat(MoreIterables.partition(set, 3)).hasSize(1).allSatisfy(partition -> assertThat(partition)
-                    .asInstanceOf(list(Integer.class))
-                    .containsExactlyInAnyOrderElementsOf(set));
+            assertThat(MoreIterables.partition(set, 3))
+                    .hasSize(1)
+                    .allSatisfy(partition -> assertThat(partition)
+                            .asInstanceOf(list(Integer.class))
+                            .containsExactlyInAnyOrderElementsOf(set));
         }
     }
 
@@ -411,18 +413,22 @@ class MoreIterablesTest {
         void shouldPartitionSmallTreeSet() {
             NavigableSet<String> treeSet = new TreeSet<>(List.of("b", "a"));
 
-            assertThat(MoreIterables.partition(treeSet, 5)).hasSize(1).allSatisfy(partition -> assertThat(partition)
-                    .asInstanceOf(list(String.class))
-                    .containsExactly("a", "b"));
+            assertThat(MoreIterables.partition(treeSet, 5))
+                    .hasSize(1)
+                    .allSatisfy(partition -> assertThat(partition)
+                            .asInstanceOf(list(String.class))
+                            .containsExactly("a", "b"));
         }
 
         @Test
         void shouldPartitionArrayDequeSmallerThanPartitionSize() {
             ArrayDeque<Integer> deque = new ArrayDeque<>(List.of(1, 2));
 
-            assertThat(MoreIterables.partition(deque, 10)).hasSize(1).allSatisfy(partition -> assertThat(partition)
-                    .asInstanceOf(list(Integer.class))
-                    .containsExactly(1, 2));
+            assertThat(MoreIterables.partition(deque, 10))
+                    .hasSize(1)
+                    .allSatisfy(partition -> assertThat(partition)
+                            .asInstanceOf(list(Integer.class))
+                            .containsExactly(1, 2));
         }
     }
 
@@ -516,12 +522,14 @@ class MoreIterablesTest {
             Iterable<Integer> customIterable = () -> List.of(1, 2, 3, 4, 5).iterator();
 
             List<Integer> allElements = new ArrayList<>();
-            assertThat(MoreIterables.partition(customIterable, 2)).hasSize(3).allSatisfy(batch -> assertThat(batch)
-                    .asInstanceOf(list(Integer.class))
-                    .satisfies(ints -> {
-                        assertThat(ints).hasSizeBetween(1, 2);
-                        allElements.addAll(ints);
-                    }));
+            assertThat(MoreIterables.partition(customIterable, 2))
+                    .hasSize(3)
+                    .allSatisfy(batch -> assertThat(batch)
+                            .asInstanceOf(list(Integer.class))
+                            .satisfies(ints -> {
+                                assertThat(ints).hasSizeBetween(1, 2);
+                                allElements.addAll(ints);
+                            }));
             assertThat(allElements).containsExactly(1, 2, 3, 4, 5);
         }
 
