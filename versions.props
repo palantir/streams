@@ -3,4 +3,4 @@ org.assertj:* = 3.27.7
 org.jspecify:* = 1.0.0
 org.junit.jupiter:* = 6.0.3
 org.junit.platform:* = 6.0.3
-org.mockito:* = 5.22.0
+org.mockito:* = 5.23.0
