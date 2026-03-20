@@ -15,14 +15,20 @@
  */
 package com.palantir.common.streams;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -67,5 +73,58 @@ public final class MoreIterables {
             }
         }
         return Iterables.partition(items, size);
+    }
+
+    /**
+     * Divides an iterable into unmodifiable sublists of the given size (the final sublist may be smaller) and passes
+     * each sublist to the given consumer. For example, partitioning an iterable containing {@code [a, b, c, d, e]} with
+     * a partition size of 3 invokes the consumer twice, once on {@code [a, b, c]} and once on {@code [d, e]}. All
+     * elements remain in the original order. The consumer is never invoked if the iterable is empty.
+     * <p>
+     * Unlike {@link MoreIterables#partition(Iterable, int)}, each sublist must be processed independently, and
+     * references to sublists must not be captured outside the consumer. For non-list iterables,
+     * {@link #partition(Iterable, int)} allocates a new list per sublist while this implementation allocates only
+     * enough storage for one sublist by reusing a single backing array across sublists. Prefer this method if sublists
+     * are processed independently.
+     *
+     * @param items the iterable to partition and consume
+     * @param size the desired size of each sublist (the last may be smaller)
+     * @param consumer the consumer of each sublist
+     */
+    public static <T extends @Nullable Object> void forEachPartition(
+            Iterable<T> items, int size, Consumer<List<T>> consumer) {
+        checkNotNull(items);
+        checkNotNull(consumer);
+        checkArgument(size > 0);
+
+        Iterator<T> iterator = items.iterator();
+        if (!iterator.hasNext()) {
+            return;
+        }
+
+        if (items instanceof List<T> list) {
+            Lists.partition(list, size).forEach(partition -> consumer.accept(Collections.unmodifiableList(partition)));
+            return;
+        }
+        if (items instanceof ImmutableCollection<@NonNull T> immutableCollection) {
+            // Immutable collections have an internal list that can be partitioned without allocating sublists.
+            Lists.partition(immutableCollection.asList(), size).forEach(consumer);
+            return;
+        }
+
+        // Avoid over-allocation when the items size is less than the partition size.
+        int arraySize = (items instanceof Collection<T> collection) ? Math.min(size, collection.size()) : size;
+
+        @SuppressWarnings("unchecked") // We only put Ts in the array.
+        T[] array = (T[]) new Object[arraySize];
+
+        List<T> partition = Collections.unmodifiableList(Arrays.asList(array));
+        do { // We already confirmed that the iterator has an item.
+            int count = 0;
+            for (; count < size && iterator.hasNext(); ++count) {
+                array[count] = iterator.next();
+            }
+            consumer.accept(count == size ? partition : partition.subList(0, count));
+        } while (iterator.hasNext());
     }
 }

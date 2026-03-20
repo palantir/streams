@@ -17,6 +17,7 @@ package com.palantir.common.streams;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.assertj.core.api.InstanceOfAssertFactories.iterable;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 
@@ -35,6 +36,7 @@ import java.util.RandomAccess;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -59,6 +61,22 @@ class MoreIterablesTest {
             assertThat(MoreIterables.partition(ImmutableSet.of(), 5)).isEmpty();
             assertThat(MoreIterables.partition(Iterables.concat(ImmutableSet.of(), Set.of()), 3))
                     .isEmpty();
+        }
+
+        @Test
+        void shouldNotInvokeConsumerForEmptyList() {
+            MoreIterables.forEachPartition(new ArrayList<>(), 3, _partition -> fail());
+            MoreIterables.forEachPartition(List.of(), 3, _partition -> fail());
+            MoreIterables.forEachPartition(ImmutableList.of(), 3, _partition -> fail());
+            MoreIterables.forEachPartition(Iterables.concat(ImmutableList.of(), List.of()), 3, _partition -> fail());
+        }
+
+        @Test
+        void shouldNotInvokeConsumerForEmptySet() {
+            MoreIterables.forEachPartition(new HashSet<>(), 3, _partition -> fail());
+            MoreIterables.forEachPartition(Set.of(), 3, _partition -> fail());
+            MoreIterables.forEachPartition(ImmutableSet.of(), 3, _partition -> fail());
+            MoreIterables.forEachPartition(Iterables.concat(ImmutableSet.of(), Set.of()), 3, _partition -> fail());
         }
     }
 
@@ -109,6 +127,41 @@ class MoreIterablesTest {
                     .hasSize(2)
                     .containsExactly(List.of("x", "y"), List.of("z", "w"));
         }
+
+        @Test
+        void shouldConsumeListInEvenChunks() {
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(
+                    List.of(1, 2, 3, 4, 5, 6), 2, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(3).containsExactly(List.of(1, 2), List.of(3, 4), List.of(5, 6));
+        }
+
+        @Test
+        void shouldConsumeListWithRemainder() {
+            List<List<String>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(
+                    List.of("a", "b", "c", "d", "e"), 3, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(2).containsExactly(List.of("a", "b", "c"), List.of("d", "e"));
+        }
+
+        @Test
+        void shouldConsumeListSmallerThanPartitionSize() {
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(List.of(1, 2), 5, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(1).containsExactly(List.of(1, 2));
+        }
+
+        @Test
+        void shouldConsumeListEqualToPartitionSize() {
+            List<List<String>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(
+                    List.of("a", "b", "c"), 3, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(1).containsExactly(List.of("a", "b", "c"));
+        }
     }
 
     @Nested
@@ -135,6 +188,28 @@ class MoreIterablesTest {
             assertThat(MoreIterables.partition(ImmutableList.of(1, 2), 10))
                     .hasSize(1)
                     .containsExactly(List.of(1, 2));
+        }
+
+        @Test
+        void shouldConsumeImmutableList() {
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(
+                    ImmutableList.of(1, 2, 3, 4, 5), 2, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(3).containsExactly(List.of(1, 2), List.of(3, 4), List.of(5));
+        }
+
+        @Test
+        void shouldConsumeImmutableSet() {
+            List<List<String>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(
+                    ImmutableSet.of("a", "b", "c", "d"), 3, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions)
+                    .hasSize(2)
+                    .allSatisfy(partition -> assertThat(partition)
+                            .asInstanceOf(list(String.class))
+                            .isSubsetOf("a", "b", "c", "d"));
         }
     }
 
@@ -187,6 +262,44 @@ class MoreIterablesTest {
                             .asInstanceOf(list(Integer.class))
                             .containsExactlyInAnyOrderElementsOf(set));
         }
+
+        @Test
+        void shouldConsumeHashSetLargerThanPartitionSize() {
+            Set<Integer> set = new HashSet<>(List.of(1, 2, 3, 4, 5, 6, 7));
+            int partitionSize = 3;
+
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(set, partitionSize, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions)
+                    .hasSize(3)
+                    .allSatisfy(partition -> assertThat(partition).hasSizeLessThanOrEqualTo(partitionSize));
+            assertThat(partitions.stream().flatMap(List::stream).toList()).containsExactlyInAnyOrderElementsOf(set);
+        }
+
+        @Test
+        void shouldConsumeHashSetSmallerThanPartitionSize() {
+            Set<String> set = new HashSet<>(List.of("a", "b"));
+            int partitionSize = 5;
+
+            List<List<String>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(set, partitionSize, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(1);
+            assertThat(partitions.stream().flatMap(List::stream).toList()).containsExactlyInAnyOrderElementsOf(set);
+        }
+
+        @Test
+        void shouldConsumeHashSetEqualToPartitionSize() {
+            Set<Integer> set = new HashSet<>(List.of(1, 2, 3));
+            int partitionSize = 3;
+
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(set, partitionSize, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(1);
+            assertThat(partitions.get(0)).containsExactlyInAnyOrderElementsOf(set);
+        }
     }
 
     @Nested
@@ -225,6 +338,22 @@ class MoreIterablesTest {
                             .satisfies(allElements::addAll));
             assertThat(allElements).containsExactlyElementsOf(list).containsExactlyElementsOf(list);
         }
+
+        @Test
+        @SuppressWarnings({"RedundantMethodReference", "UnnecessaryMethodReference"}) // explicitly testing
+        void shouldConsumeCustomIterable() {
+            List<String> list = List.of("a", "b", "c", "d", "e");
+            int partitionSize = 2;
+
+            List<List<String>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(
+                    list::iterator, partitionSize, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions)
+                    .hasSize(3)
+                    .allSatisfy(partition -> assertThat(partition).hasSizeLessThanOrEqualTo(partitionSize));
+            assertThat(partitions.stream().flatMap(List::stream).toList()).containsExactlyElementsOf(list);
+        }
     }
 
     @Nested
@@ -248,6 +377,20 @@ class MoreIterablesTest {
 
             assertThatThrownBy(partition::clear).isInstanceOf(UnsupportedOperationException.class);
         }
+
+        @Test
+        void shouldConsumeUnmodifiableSublistsForList() {
+            MoreIterables.forEachPartition(new ArrayList<>(List.of(1, 2, 3)), 2, partition -> {
+                assertThatThrownBy(() -> partition.add(99)).isInstanceOf(UnsupportedOperationException.class);
+            });
+        }
+
+        @Test
+        void shouldConsumeUnmodifiableSublistsForHashSet() {
+            MoreIterables.forEachPartition(new HashSet<>(List.of(1, 2, 3)), 2, partition -> {
+                assertThatThrownBy(() -> partition.add(99)).isInstanceOf(UnsupportedOperationException.class);
+            });
+        }
     }
 
     @Nested
@@ -270,6 +413,35 @@ class MoreIterablesTest {
         @Test
         void shouldHandleNullElements() {
             assertThat(MoreIterables.partition(Arrays.asList("a", null, "c", null, "e"), 2))
+                    .hasSize(3)
+                    .containsExactly(Arrays.asList("a", null), Arrays.asList("c", null), List.of("e"));
+        }
+
+        @Test
+        void shouldConsumePartitionSizeOfOne() {
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(List.of(1, 2, 3), 1, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(3).containsExactly(List.of(1), List.of(2), List.of(3));
+        }
+
+        @Test
+        void shouldConsumeLargePartitionSize() {
+            List<List<String>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(
+                    List.of("a", "b", "c"), 1000, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(1).containsExactly(List.of("a", "b", "c"));
+        }
+
+        @Test
+        void shouldConsumeNullElements() {
+            List<@Nullable String> listWithNullElements = Arrays.asList("a", null, "c", null, "e");
+            List<List<@Nullable String>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(
+                    listWithNullElements, 2, partition -> partitions.add(new ArrayList<>(partition)));
+
+            assertThat(partitions)
                     .hasSize(3)
                     .containsExactly(Arrays.asList("a", null), Arrays.asList("c", null), List.of("e"));
         }
@@ -319,6 +491,30 @@ class MoreIterablesTest {
         @Test
         void shouldThrowExceptionForNullIterable() {
             assertThatThrownBy(() -> MoreIterables.partition(null, 3)).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        void forEachShouldThrowExceptionForZeroPartitionSize() {
+            assertThatThrownBy(() -> MoreIterables.forEachPartition(Set.of(1, 2, 3), 0, _partition -> fail()))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void forEachShouldThrowExceptionForNegativePartitionSize() {
+            assertThatThrownBy(() -> MoreIterables.forEachPartition(Set.of(1, 2, 3), -1, _partition -> fail()))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void forEachShouldThrowExceptionForNullIterable() {
+            assertThatThrownBy(() -> MoreIterables.forEachPartition(null, -1, _partition -> fail()))
+                    .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        void forEachShouldThrowExceptionForNullConsumer() {
+            assertThatThrownBy(() -> MoreIterables.forEachPartition(Set.of(1, 2, 3), -1, null))
+                    .isInstanceOf(NullPointerException.class);
         }
     }
 
