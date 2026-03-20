@@ -626,6 +626,35 @@ class MoreIterablesTest {
                             .asInstanceOf(list(Integer.class))
                             .containsExactly(1, 2));
         }
+
+        @Test
+        void shouldConsumeTreeSet() {
+            NavigableSet<Integer> treeSet = new TreeSet<>(List.of(5, 2, 8, 1, 9, 3, 7));
+            int partitionSize = 3;
+
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(treeSet, partitionSize, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions)
+                    .hasSize(3)
+                    .allSatisfy(partition -> assertThat(partition).hasSizeLessThanOrEqualTo(partitionSize));
+            // TreeSet maintains sorted order
+            assertThat(partitions.stream().flatMap(List::stream).toList()).containsExactly(1, 2, 3, 5, 7, 8, 9);
+        }
+
+        @Test
+        void shouldConsumeArrayDeque() {
+            ArrayDeque<String> deque = new ArrayDeque<>(List.of("a", "b", "c", "d", "e"));
+            int partitionSize = 2;
+
+            List<List<String>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(deque, partitionSize, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions)
+                    .hasSize(3)
+                    .allSatisfy(partition -> assertThat(partition).hasSizeLessThanOrEqualTo(partitionSize));
+            assertThat(partitions.stream().flatMap(List::stream).toList()).containsExactlyElementsOf(deque);
+        }
     }
 
     @Nested
@@ -692,6 +721,65 @@ class MoreIterablesTest {
             partitions.forEach(allElements::addAll);
 
             assertThat(allElements).containsExactlyInAnyOrderElementsOf(largeSet);
+        }
+
+        @Test
+        void shouldConsumeLargeList() {
+            List<Integer> largeList = new ArrayList<>();
+            for (int i = 0; i < 1000; i++) {
+                largeList.add(i);
+            }
+
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(largeList, 100, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(10);
+            int index = 0;
+            for (List<Integer> partition : partitions) {
+                assertThat(partition).hasSize(100);
+                for (int value : partition) {
+                    assertThat(value).isEqualTo(index++);
+                }
+            }
+        }
+
+        @Test
+        void shouldConsumeLargeImmutableList() {
+            ImmutableList.Builder<Integer> builder = ImmutableList.builder();
+            for (int i = 0; i < 1000; i++) {
+                builder.add(i);
+            }
+            ImmutableList<Integer> largeImmutableList = builder.build();
+
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(
+                    largeImmutableList, 100, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions).hasSize(10);
+            int index = 0;
+            for (List<Integer> partition : partitions) {
+                assertThat(partition).hasSize(100);
+                for (int value : partition) {
+                    assertThat(value).isEqualTo(index++);
+                }
+            }
+        }
+
+        @Test
+        void shouldConsumeLargeHashSet() {
+            Set<Integer> largeSet = new HashSet<>();
+            for (int i = 0; i < 1000; i++) {
+                largeSet.add(i);
+            }
+
+            List<List<Integer>> partitions = new ArrayList<>();
+            MoreIterables.forEachPartition(largeSet, 100, partition -> partitions.add(List.copyOf(partition)));
+
+            assertThat(partitions)
+                    .hasSize(10)
+                    .allSatisfy(partition -> assertThat(partition).hasSize(100));
+            assertThat(partitions.stream().flatMap(List::stream).toList())
+                    .containsExactlyInAnyOrderElementsOf(largeSet);
         }
     }
 
