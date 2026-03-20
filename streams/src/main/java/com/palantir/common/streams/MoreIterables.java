@@ -116,7 +116,7 @@ public final class MoreIterables {
         // Avoid over-allocation when the iterable (collection) size is less than the partition size.
         int arraySize = (items instanceof Collection<T> collection) ? Math.min(size, collection.size()) : size;
 
-        @SuppressWarnings("unchecked") // We only put Ts in the array.
+        @SuppressWarnings("unchecked") // We put only Ts in the array.
         T[] array = (T[]) new Object[arraySize];
 
         List<T> partition = Collections.unmodifiableList(Arrays.asList(array));
