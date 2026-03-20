@@ -103,16 +103,17 @@ public final class MoreIterables {
         }
 
         if (items instanceof List<T> list) {
+            // Lists.partition creates sublist views without copying elements.
             Lists.partition(list, size).forEach(partition -> consumer.accept(Collections.unmodifiableList(partition)));
             return;
         }
         if (items instanceof ImmutableCollection<@NonNull T> immutableCollection) {
-            // Immutable collections have an internal list that can be partitioned without allocating sublists.
+            // Each immutable collection has an internal list that can leverage Lists.partition.
             Lists.partition(immutableCollection.asList(), size).forEach(consumer);
             return;
         }
 
-        // Avoid over-allocation when the items size is less than the partition size.
+        // Avoid over-allocation when the iterable (collection) size is less than the partition size.
         int arraySize = (items instanceof Collection<T> collection) ? Math.min(size, collection.size()) : size;
 
         @SuppressWarnings("unchecked") // We only put Ts in the array.
