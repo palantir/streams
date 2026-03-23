@@ -12,7 +12,7 @@ com.google.j2objc:j2objc-annotations:3.1 (1 constraints: b809f1a0)
 
 com.palantir.safe-logging:preconditions:3.13.0 (1 constraints: 39053e3b)
 
-com.palantir.safe-logging:safe-logging:3.13.0 (1 constraints: 331160d1)
+com.palantir.safe-logging:safe-logging:3.13.0 (2 constraints: 6b16740c)
 
 org.jetbrains:annotations:26.1.0 (1 constraints: 351170d1)
 
