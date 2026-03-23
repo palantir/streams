@@ -15,13 +15,14 @@
  */
 package com.palantir.common.streams;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.palantir.logsafe.Preconditions.checkArgument;
+import static com.palantir.logsafe.Preconditions.checkNotNull;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.palantir.logsafe.SafeArg;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -95,21 +96,21 @@ public final class MoreIterables {
             Iterable<T> items, int size, Consumer<List<T>> consumer) {
         checkNotNull(items);
         checkNotNull(consumer);
-        checkArgument(size > 0);
+        checkArgument(size > 0, "size must be greater than zero", SafeArg.of("size", size));
 
         Iterator<T> iterator = items.iterator();
         if (!iterator.hasNext()) {
             return;
         }
 
-        if (items instanceof List<T> list) {
-            // Lists.partition creates sublist views without copying elements.
-            Lists.partition(list, size).forEach(partition -> consumer.accept(Collections.unmodifiableList(partition)));
-            return;
-        }
         if (items instanceof ImmutableCollection<@NonNull T> immutableCollection) {
             // Each immutable collection has an internal list that can leverage Lists.partition.
             Lists.partition(immutableCollection.asList(), size).forEach(consumer);
+            return;
+        }
+        if (items instanceof List<T> list) {
+            // Lists.partition creates sublist views without copying elements.
+            Lists.partition(list, size).forEach(partition -> consumer.accept(Collections.unmodifiableList(partition)));
             return;
         }
 

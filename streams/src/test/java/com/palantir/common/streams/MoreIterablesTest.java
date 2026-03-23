@@ -507,13 +507,13 @@ class MoreIterablesTest {
 
         @Test
         void forEachShouldThrowExceptionForNullIterable() {
-            assertThatThrownBy(() -> MoreIterables.forEachPartition(null, -1, _partition -> fail()))
+            assertThatThrownBy(() -> MoreIterables.forEachPartition(null, 1, _partition -> fail()))
                     .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         void forEachShouldThrowExceptionForNullConsumer() {
-            assertThatThrownBy(() -> MoreIterables.forEachPartition(Set.of(1, 2, 3), -1, null))
+            assertThatThrownBy(() -> MoreIterables.forEachPartition(Set.of(1, 2, 3), 1, null))
                     .isInstanceOf(NullPointerException.class);
         }
     }
