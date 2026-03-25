@@ -1,4 +1,5 @@
 apply plugin: 'com.palantir.external-publish-jar'
+apply plugin: 'me.champeau.jmh'
 
 dependencies {
     api 'com.google.guava:guava'
@@ -14,4 +15,11 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
     testImplementation 'org.mockito:mockito-core'
     testImplementation 'org.mockito:mockito-junit-jupiter'
+
+    jmh 'org.openjdk.jmh:jmh-core'
+    jmh 'org.openjdk.jmh:jmh-generator-annprocess'
+}
+
+jmh {
+    profilers = ['gc']
 }

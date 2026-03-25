@@ -94,23 +94,23 @@ public final class MoreIterables {
      */
     public static <T extends @Nullable Object> void forEachPartition(
             Iterable<T> items, int size, Consumer<List<T>> consumer) {
-        checkNotNull(items);
-        checkNotNull(consumer);
+        checkNotNull(items, "items must not be null");
+        checkNotNull(consumer, "consumer must not be null");
         checkArgument(size > 0, "size must be greater than zero", SafeArg.of("size", size));
 
-        Iterator<T> iterator = items.iterator();
-        if (!iterator.hasNext()) {
-            return;
-        }
-
         if (items instanceof ImmutableCollection<@NonNull T> immutableCollection) {
-            // Each immutable collection has an internal list that can leverage Lists.partition.
+            // Many immutable collections have an internal list that can leverage Lists.partition.
             Lists.partition(immutableCollection.asList(), size).forEach(consumer);
             return;
         }
         if (items instanceof List<T> list) {
             // Lists.partition creates sublist views without copying elements.
             Lists.partition(list, size).forEach(partition -> consumer.accept(Collections.unmodifiableList(partition)));
+            return;
+        }
+
+        Iterator<T> iterator = items.iterator();
+        if (!iterator.hasNext()) {
             return;
         }
 
