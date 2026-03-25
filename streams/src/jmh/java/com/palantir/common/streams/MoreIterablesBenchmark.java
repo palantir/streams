@@ -58,6 +58,7 @@ import org.openjdk.jmh.infra.Blackhole;
 // HASH_SET                               48,307             414,147
 // TREE_SET                               48,195             414,147
 // HASH_MAP_ENTRIES                       48,307             414,147
+// CUSTOM_ITERABLE                        48,307             414,147
 //
 // size=50000
 // Collection Type                  forEachPartition    partition.forEach
@@ -70,6 +71,7 @@ import org.openjdk.jmh.infra.Blackhole;
 // HASH_SET                               47,915           2,039,747
 // TREE_SET                               47,907           2,039,747
 // HASH_MAP_ENTRIES                       47,768           2,039,747
+// CUSTOM_ITERABLE                        48,211           2,039,747
 @State(Scope.Benchmark)
 @Fork(value = 2)
 @Warmup(iterations = 1, batchSize = 10)
@@ -87,6 +89,7 @@ public class MoreIterablesBenchmark {
         HASH_SET,
         TREE_SET,
         HASH_MAP_ENTRIES,
+        CUSTOM_ITERABLE
     }
 
     @Param({"10000", "50000"})
@@ -124,6 +127,7 @@ public class MoreIterablesBenchmark {
             case HASH_MAP_ENTRIES ->
                 new HashMap<>(elements.stream().collect(Collectors.toMap(Function.identity(), Function.identity())))
                         .entrySet();
+            case CUSTOM_ITERABLE -> (Iterable<Integer>) elements::iterator;
         };
     }
 
