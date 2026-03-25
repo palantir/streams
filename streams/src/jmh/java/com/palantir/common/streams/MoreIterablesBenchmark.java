@@ -101,7 +101,7 @@ public class MoreIterablesBenchmark {
     private Iterable<?> iterable;
 
     @Setup
-    public final void setup() {
+    public final void before() {
         List<Integer> elements = new ArrayList<>();
         for (int i = 0; i < size; ++i) {
             elements.add(i);

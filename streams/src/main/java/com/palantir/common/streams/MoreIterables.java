@@ -82,7 +82,7 @@ public final class MoreIterables {
      * a partition size of 3 invokes the consumer twice, once on {@code [a, b, c]} and once on {@code [d, e]}. All
      * elements remain in the original order. The consumer is never invoked if the iterable is empty.
      * <p>
-     * Unlike {@link MoreIterables#partition(Iterable, int)}, each sublist must be processed independently, and
+     * Unlike {@link MoreIterables#partition(Iterable, int)}, each sublist must be processed independently, meaning
      * references to sublists must not be captured outside the consumer. For non-list iterables,
      * {@link #partition(Iterable, int)} allocates a new list per sublist while this implementation allocates only
      * enough storage for one sublist by reusing a single backing array across sublists. Prefer this method if sublists
