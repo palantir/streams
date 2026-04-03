@@ -99,7 +99,10 @@ public final class MoreIterables {
         checkArgument(size > 0, "size must be greater than zero", SafeArg.of("size", size));
 
         if (items instanceof ImmutableCollection<@NonNull T> immutableCollection) {
-            // Many immutable collections have an internal list that can leverage Lists.partition.
+            // Many immutable collections have an internal list that can leverage Lists.partition. Some, such as
+            // ImmutableSetMultimap.EntrySet, do not, but these are rare and not easily identifiable. We prefer to be
+            // efficient on most ImmutableCollection implementations at the cost of having similar performance to
+            // partition.forEach for these rare edge cases.
             Lists.partition(immutableCollection.asList(), size).forEach(consumer);
             return;
         }
