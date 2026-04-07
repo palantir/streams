@@ -15,14 +15,21 @@
  */
 package com.palantir.common.streams;
 
+import static com.palantir.logsafe.Preconditions.checkArgument;
+import static com.palantir.logsafe.Preconditions.checkNotNull;
+
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.palantir.logsafe.SafeArg;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -67,5 +74,62 @@ public final class MoreIterables {
             }
         }
         return Iterables.partition(items, size);
+    }
+
+    /**
+     * Divides an iterable into unmodifiable sublists of the given size (the final sublist may be smaller) and passes
+     * each sublist to the given consumer. For example, partitioning an iterable containing {@code [a, b, c, d, e]} with
+     * a partition size of 3 invokes the consumer twice, once on {@code [a, b, c]} and once on {@code [d, e]}. All
+     * elements remain in the original order. The consumer is never invoked if the iterable is empty.
+     * <p>
+     * Unlike {@link MoreIterables#partition(Iterable, int)}, each sublist must be processed independently, meaning
+     * references to sublists must not be captured outside the consumer. For non-list iterables,
+     * {@link #partition(Iterable, int)} allocates a new list per sublist while this implementation allocates only
+     * enough storage for one sublist by reusing a single backing array across sublists. Prefer this method if sublists
+     * are processed independently.
+     *
+     * @param items the iterable to partition and consume
+     * @param size the desired size of each sublist (the last may be smaller)
+     * @param consumer the consumer of each sublist
+     */
+    public static <T extends @Nullable Object> void forEachPartition(
+            Iterable<T> items, int size, Consumer<List<T>> consumer) {
+        checkNotNull(items, "items must not be null");
+        checkNotNull(consumer, "consumer must not be null");
+        checkArgument(size > 0, "size must be greater than zero", SafeArg.of("size", size));
+
+        if (items instanceof ImmutableCollection<@NonNull T> immutableCollection) {
+            // Many immutable collections have an internal list that can leverage Lists.partition. Some, such as
+            // ImmutableSetMultimap.EntrySet, do not, but these are rare and not easily identifiable. We prefer to be
+            // efficient on most ImmutableCollection implementations at the cost of having similar performance to
+            // partition.forEach for these rare edge cases.
+            Lists.partition(immutableCollection.asList(), size).forEach(consumer);
+            return;
+        }
+        if (items instanceof List<T> list) {
+            // Lists.partition creates sublist views without copying elements.
+            Lists.partition(list, size).forEach(partition -> consumer.accept(Collections.unmodifiableList(partition)));
+            return;
+        }
+
+        Iterator<T> iterator = items.iterator();
+        if (!iterator.hasNext()) {
+            return;
+        }
+
+        // Avoid over-allocation when the iterable (collection) size is less than the partition size.
+        int arraySize = (items instanceof Collection<T> collection) ? Math.min(size, collection.size()) : size;
+
+        @SuppressWarnings("unchecked") // We put only Ts in the array.
+        T[] array = (T[]) new Object[arraySize];
+
+        List<T> partition = Collections.unmodifiableList(Arrays.asList(array));
+        do { // We already confirmed that the iterator has an item.
+            int count = 0;
+            for (; count < size && iterator.hasNext(); ++count) {
+                array[count] = iterator.next();
+            }
+            consumer.accept(count == size ? partition : partition.subList(0, count));
+        } while (iterator.hasNext());
     }
 }
