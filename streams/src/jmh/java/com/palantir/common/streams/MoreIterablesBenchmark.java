@@ -103,6 +103,7 @@ public class MoreIterablesBenchmark {
 
     private Iterable<?> iterable;
 
+    @SuppressWarnings("for-rollout:UnnecessaryMethodReference")
     @Setup
     public final void before() {
         List<Integer> elements = new ArrayList<>();
@@ -127,7 +128,7 @@ public class MoreIterablesBenchmark {
             case HASH_MAP_ENTRIES ->
                 new HashMap<>(elements.stream().collect(Collectors.toMap(Function.identity(), Function.identity())))
                         .entrySet();
-            case CUSTOM_ITERABLE -> (Iterable<Integer>) elements::iterator;
+            case CUSTOM_ITERABLE -> (Iterable<Integer>) elements;
         };
     }
 
