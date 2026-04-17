@@ -1,5 +1,5 @@
 com.google.guava:guava = 33.6.0-jre
-com.palantir.safe-logging:* = 3.13.0
+com.palantir.safe-logging:* = 3.14.0
 org.assertj:* = 3.27.7
 org.jspecify:* = 1.0.0
 org.junit.jupiter:* = 6.0.3
