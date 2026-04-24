@@ -103,7 +103,6 @@ public class MoreIterablesBenchmark {
 
     private Iterable<?> iterable;
 
-    @SuppressWarnings("for-rollout:UnnecessaryMethodReference")
     @Setup
     public final void before() {
         List<Integer> elements = new ArrayList<>();
