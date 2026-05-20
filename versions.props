@@ -3,6 +3,6 @@ com.palantir.safe-logging:* = 3.15.0
 org.assertj:* = 3.27.7
 org.jspecify:* = 1.0.0
 org.junit.jupiter:* = 6.0.3
-org.junit.platform:* = 6.0.3
+org.junit.platform:* = 6.1.0
 org.mockito:* = 5.23.0
 org.openjdk.jmh:* = 1.37
