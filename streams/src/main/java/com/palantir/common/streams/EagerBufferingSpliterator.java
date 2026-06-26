@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Spliterator;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorCompletionService;
@@ -51,7 +52,7 @@ class EagerBufferingSpliterator<T, U> implements Spliterator<T> {
         this.source = source;
         this.mapper = mapper;
         this.maxParallelism = maxParallelism;
-        this.completionService = new ExecutorCompletionService<>(executor);
+        this.completionService = new ExecutorCompletionService<>(executor, new ArrayBlockingQueue<>(maxParallelism));
     }
 
     @Override
@@ -84,17 +85,16 @@ class EagerBufferingSpliterator<T, U> implements Spliterator<T> {
 
     private void startWorkEagerly() {
         while (!sourceExhausted && inFlight < maxParallelism) {
-            ValueHolder<U> holder = new ValueHolder<>();
-            boolean hasMore = source.tryAdvance(input -> holder.value = input);
+            boolean hasMore = source.tryAdvance(input -> {
+                long index = nextIndexToStart++;
+                Future<T> future = completionService.submit(() -> mapper.apply(input));
+                indexesByFuture.put(future, index);
+                inFlight++;
+            });
             if (!hasMore) {
                 sourceExhausted = true;
                 return;
             }
-
-            long index = nextIndexToStart++;
-            Future<T> future = completionService.submit(() -> mapper.apply(holder.value));
-            indexesByFuture.put(future, index);
-            inFlight++;
         }
     }
 
@@ -133,9 +133,5 @@ class EagerBufferingSpliterator<T, U> implements Spliterator<T> {
     @Override
     public int characteristics() {
         return source.hasCharacteristics(Spliterator.ORDERED) ? Spliterator.ORDERED : 0;
-    }
-
-    private static final class ValueHolder<U> {
-        private U value;
     }
 }
