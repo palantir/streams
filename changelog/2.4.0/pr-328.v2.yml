@@ -1,5 +1,0 @@
-type: feature
-feature:
-  description: MoreCollectors.toImmutableMap() convenience method
-  links:
-  - https://github.com/palantir/streams/pull/328
