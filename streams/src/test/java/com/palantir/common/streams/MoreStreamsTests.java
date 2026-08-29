@@ -21,6 +21,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.Uninterruptibles;
 import java.time.Duration;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -112,11 +115,46 @@ public class MoreStreamsTests {
     }
 
     @Test
+    public void testInCompletionOrder_transformWithFutureSupplier() throws InterruptedException {
+        ListeningExecutorService executorService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(3));
+        UnaryOperator<Integer> reorder = reorder();
+        Function<Integer, ListenableFuture<Integer>> futureSupplier =
+                i -> executorService.submit(() -> reorder.apply(i));
+
+        // 2 cannot start until a task has finished, 0 cannot start until 2 is running, so 1 must come first.
+        try (Stream<Integer> integerStream = MoreStreams.inCompletionOrder(
+                IntStream.range(0, 3).boxed().onClose(() -> streamClosed.set(true)), futureSupplier, 2)) {
+            assertThat(integerStream.collect(toList())).startsWith(1).containsExactlyInAnyOrder(0, 1, 2);
+        } finally {
+            executorService.shutdown();
+            executorService.awaitTermination(1, TimeUnit.SECONDS);
+        }
+        assertThat(streamClosed).isTrue();
+    }
+
+    @Test
     public void testBlockingStreamWithParallelism_transformWithExecutor() throws InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         // due to size of thread pool, 1 must finish before 0, but 0 will return first.
         try (Stream<Integer> integerStream = MoreStreams.blockingStreamWithParallelism(
                 IntStream.range(0, 3).boxed().onClose(() -> streamClosed.set(true)), reorder(), executorService, 3)) {
+            assertThat(integerStream.collect(toList())).containsExactly(0, 1, 2);
+        } finally {
+            executorService.shutdown();
+            executorService.awaitTermination(1, TimeUnit.SECONDS);
+        }
+        assertThat(streamClosed).isTrue();
+    }
+
+    @Test
+    public void testBlockingStreamWithParallelism_transformWithFutureSupplier() throws InterruptedException {
+        ListeningExecutorService executorService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(2));
+        UnaryOperator<Integer> reorder = reorder();
+        Function<Integer, ListenableFuture<Integer>> futureSupplier =
+                i -> executorService.submit(() -> reorder.apply(i));
+        // due to size of thread pool, 1 must finish before 0, but 0 will return first.
+        try (Stream<Integer> integerStream = MoreStreams.blockingStreamWithParallelism(
+                IntStream.range(0, 3).boxed().onClose(() -> streamClosed.set(true)), futureSupplier, 3)) {
             assertThat(integerStream.collect(toList())).containsExactly(0, 1, 2);
         } finally {
             executorService.shutdown();
@@ -154,6 +192,43 @@ public class MoreStreamsTests {
                 },
                 executorService,
                 maxParallelism)) {
+            assertThat(inCompletionOrder.collect(toList())).containsExactlyInAnyOrder(0, 1, 2);
+            assertThat(maximum).hasValue(maxParallelism);
+        } finally {
+            executorService.shutdown();
+            executorService.awaitTermination(1, TimeUnit.SECONDS);
+        }
+        assertThat(streamClosed).isTrue();
+    }
+
+    @Test
+    public void testConcurrencySimpleStreamAndFutureSupplier() throws InterruptedException {
+        testConcurrencyWithFutureSupplier(IntStream.range(0, 3).boxed());
+    }
+
+    @Test
+    public void testConcurrencyWithFlatmapAndFutureSupplie() throws InterruptedException {
+        testConcurrencyWithFutureSupplier(
+                Stream.of(1).flatMap(_ignored -> IntStream.range(0, 3).boxed()));
+    }
+
+    private void testConcurrencyWithFutureSupplier(Stream<Integer> value) throws InterruptedException {
+        AtomicInteger maximum = new AtomicInteger(-1);
+        AtomicInteger current = new AtomicInteger();
+        int maxParallelism = 1;
+        ListeningExecutorService executorService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(3));
+        Function<Integer, ListenableFuture<Integer>> toFuture = input -> executorService.submit(() -> {
+            int running = current.incrementAndGet();
+            maximum.accumulateAndGet(running, Math::max);
+            try {
+                Uninterruptibles.sleepUninterruptibly(Duration.ofMillis(200));
+            } finally {
+                current.decrementAndGet();
+            }
+            return input;
+        });
+        try (Stream<Integer> inCompletionOrder =
+                MoreStreams.inCompletionOrder(value.onClose(() -> streamClosed.set(true)), toFuture, maxParallelism)) {
             assertThat(inCompletionOrder.collect(toList())).containsExactlyInAnyOrder(0, 1, 2);
             assertThat(maximum).hasValue(maxParallelism);
         } finally {
