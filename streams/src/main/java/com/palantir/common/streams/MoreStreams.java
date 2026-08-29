@@ -99,7 +99,10 @@ public final class MoreStreams {
      * each future to complete before returning it, but which looks ahead {@code maxParallelism} arguments to ensure a
      * fixed parallelism rate.
      *
-     * The caller is required to pass in an executor to run the mapper function on.
+     * <p>Slow elements can reduce parallelism because later work is not started until earlier results are
+     * returned.
+     *
+     * @param executor the executor to run the mapper function on
      */
     public static <U, V> Stream<V> blockingStreamWithParallelism(
             Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
@@ -113,6 +116,22 @@ public final class MoreStreams {
                 .onClose(arguments::close)
                 .map(MoreFutures::blockUntilCompletion)
                 .map(Futures::getUnchecked);
+    }
+
+    /**
+     * Like blockingStreamWithParallelism, but starts new work when any in-flight element completes.
+     * Results are still returned in source order.
+     *
+     * <p>Later results may be buffered until earlier elements finish.
+     *
+     * @param executor the executor to run the mapper function on
+     */
+    public static <U, V> Stream<V> eagerBlockingStreamWithParallelism(
+            Stream<U> arguments, Function<U, V> mapper, Executor executor, int maxParallelism) {
+        return StreamSupport.stream(
+                        new EagerBufferingSpliterator<>(arguments.spliterator(), mapper, executor, maxParallelism),
+                        NOT_PARALLEL)
+                .onClose(arguments::close);
     }
 
     /**
